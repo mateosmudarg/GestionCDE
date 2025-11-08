@@ -1,6 +1,6 @@
 # Panel de Control Django
 
-Un panel de control moderno y funcional enfocado en los centros de estudiantes construido con **Django**, **Python** y **Bootstrap**. Permite gestionar información de manera centralizada, visualizar datos con gráficos y personalizar módulos según las necesidades del proyecto.
+Un panel de control moderno y funcional enfocado en los centros de estudiantes construido con **Django**, **Python** y **Bootstrap**.
 
 ---
 
