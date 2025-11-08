@@ -1,0 +1,124 @@
+{% extends 'layout.html' %}
+{% block title %}| Inicio{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <h2 class="fw-bold mb-4 d-flex align-items-center">
+    <i class="bi bi-speedometer2 me-2"></i> Dashboard General
+  </h2>
+
+  <!-- Tarjetas de resumen -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-6 col-lg-3">
+      <div class="card shadow-sm border-0 bg-gradient bg-primary text-white">
+        <div class="card-body">
+          <h5 class="card-title"><i class="bi bi-calendar-event me-2"></i>Eventos</h5>
+          <h2 class="fw-bold">{{ total_eventos }}</h2>
+          <p class="mb-0">Eventos registrados</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="card shadow-sm border-0 bg-gradient bg-success text-white">
+        <div class="card-body">
+          <h5 class="card-title"><i class="bi bi-bag-check me-2"></i>Ventas</h5>
+          <h2 class="fw-bold">{{ total_ventas }}</h2>
+          <p class="mb-0">Transacciones totales</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="card shadow-sm border-0 bg-gradient bg-warning text-black" id="gananciasCard">
+        <div class="card-body">
+          <h5 class="card-title"><i class="bi bi-cash-coin me-2"></i>Ganancias</h5>
+          <h2 class="fw-bold">${{ total_ganancias|floatformat:2 }}</h2>
+          <p class="mb-0">Recaudado en total</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="card shadow-sm border-0 bg-gradient bg-warning text-black" id="gananciasNetasCard">
+        <div class="card-body">
+          <h5 class="card-title"><i class="bi bi-cash-coin me-2"></i>Ganancias Netas</h5>
+          <h2 class="fw-bold">${{ ganancias_netas|floatformat:2 }}</h2>
+          <p class="mb-0">Ganancias finales</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficos -->
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-3"><i class="bi bi-bar-chart-line me-2"></i>Productos más vendidos</h5>
+          <canvas id="productosMasVendidos"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const ctx = document.getElementById('productosMasVendidos').getContext('2d');
+
+    // Detectar modo oscuro en Bootstrap 5
+    const darkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+
+    // Definir colores según modo
+    const colors = {
+        text: darkMode ? '#ffffff' : '#333333',
+        grid: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+        bar: darkMode ? '#ff7b00ff' : '#2bff00ff',
+        border: darkMode ? '#d1a0ff' : '#a52fff',
+        tooltipBg: darkMode ? '#222' : '#fff',
+        tooltipText: darkMode ? '#fff' : '#000'
+    };
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ labels_productos|safe }},
+            datasets: [{
+                label: 'Cantidad vendida',
+                data: {{ data_productos|safe }},
+                backgroundColor: colors.bar,
+                borderColor: colors.border,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: colors.text // color de la leyenda
+                    }
+                },
+                tooltip: {
+                    backgroundColor: colors.tooltipBg,
+                    titleColor: colors.tooltipText,
+                    bodyColor: colors.tooltipText
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: colors.text },
+                    grid: { color: colors.grid }
+                },
+                y: {
+                    ticks: { color: colors.text },
+                    grid: { color: colors.grid }
+                }
+            }
+        }
+    });
+});
+</script>
+
+
+{% endblock %}

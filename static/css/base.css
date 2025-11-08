@@ -1,0 +1,232 @@
+:root {
+    --sidebar-width: 250px;
+    --sidebar-collapsed-width: 70px;
+    --primario: #0066ff;
+    --secundario: #00aaff;
+    --bg: #f5f7fb;
+    --text: #222;
+    --topbar-bg: #ffffff;
+}
+
+[data-bs-theme="dark"] {
+    --bg: #0f1112;
+    --text: #e6eef8;
+    --primario: #007bff;
+    --secundario: #00c6ff;
+    --topbar-bg: #151718;
+}
+
+html,
+body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    transition: background .25s, color .25s;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--primario);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    transition: width .25s, left .25s, transform .25s;
+    z-index: 1100;
+    overflow: hidden;
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+
+.sidebar .logo {
+    padding: 1rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar .logo img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.sidebar .brand-text {
+    font-weight: 700;
+    font-size: .95rem;
+    margin-top: .35rem;
+    display: inline-block;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar li.nav-item {
+    width: 100%;
+}
+
+.sidebar a.nav-link {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: .75rem 1rem;
+    color: rgba(255, 255, 255, 0.95);
+    text-decoration: none;
+}
+
+.sidebar a.nav-link:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.sidebar .nav-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar.collapsed .nav-text {
+    display: none;
+}
+
+.sidebar .collapse .nav-link {
+    padding-left: 2.4rem;
+}
+
+.topbar {
+    position: fixed;
+    left: var(--sidebar-width);
+    right: 0;
+    height: 60px;
+    background: var(--topbar-bg);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 .75rem;
+    z-index: 1050;
+    transition: left .25s;
+}
+
+.sidebar.collapsed~.topbar {
+    left: var(--sidebar-collapsed-width);
+}
+
+main {
+    margin-left: var(--sidebar-width);
+    padding: 80px 1.5rem 2rem 1.5rem;
+    transition: margin-left .25s;
+}
+
+.sidebar.collapsed~main {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-110%);
+        left: 0;
+        width: var(--sidebar-width);
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    .sidebar.collapsed {
+        width: var(--sidebar-width);
+    }
+    .topbar {
+        left: 0;
+    }
+
+    main {
+        margin-left: 0;
+        padding-top: 70px;
+    }
+}
+
+.menu-toggle {
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--text);
+}
+
+.table-modern {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(15, 17, 18, 0.06);
+    background: var(--card-bg, #fff);
+}
+
+.table-modern thead th {
+    background: var(--primario);
+    color: #fff;
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: .85rem;
+    letter-spacing: .02em;
+    padding: 16px;
+}
+
+.table-modern td {
+    padding: 14px 16px;
+    vertical-align: middle;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    color: var(--text);
+}
+
+.table-modern tr:hover td {
+    background: rgba(0, 0, 0, 0.02);
+    transition: background .15s;
+}
+
+.evento-proximo {
+    background: linear-gradient(90deg, rgba(40, 167, 69, 0.08), rgba(40, 167, 69, 0.03));
+    border-left: 6px solid #28a745;
+    animation: pulseBorder 1.6s infinite alternate;
+}
+
+@keyframes pulseBorder {
+    from {
+        border-left-color: #28a745;
+    }
+
+    to {
+        border-left-color: #5cd670;
+    }
+}
+
+[data-bs-theme="dark"] .table-modern thead th {
+    filter: hue-rotate(200deg) brightness(.95);
+}
+
+[data-bs-theme="dark"] .table-modern td {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    color: var(--text);
+}
+
+[data-bs-theme="dark"] .table-modern {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+    --card-bg: #0b0d0e;
+}
+
+.sidebar .sidebar-footer {
+    padding: .5rem 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: .85rem;
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+    justify-content: center;
+}

@@ -15,7 +15,6 @@ class Cargo(models.Model):
     def __str__(self):
         return self.nombre
 
-
 class Gestion(models.Model):
     """Representa un periodo de gestión del centro."""
     nombre = models.CharField(max_length=100, help_text="Ejemplo: Gestión 2025")
@@ -24,7 +23,6 @@ class Gestion(models.Model):
 
     def __str__(self):
         return self.nombre
-
 
 class MiembroGestion(models.Model):
     """Asocia un usuario a un cargo durante una gestión específica."""

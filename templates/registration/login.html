@@ -1,0 +1,157 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión | Centro de Estudiantes</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0066ff, #00aaff);
+            transition: background 0.3s ease;
+        }
+
+        [data-bs-theme="dark"] body {
+            background: linear-gradient(135deg, #121416, #1e2428);
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        [data-bs-theme="dark"] .login-card {
+            background: #202224;
+            color: #e0e0e0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .login-logo img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+        }
+
+        .login-card h2 {
+            font-weight: bold;
+            color: var(--color-primario, #0066ff);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        [data-bs-theme="dark"] .login-card h2 {
+            color: #4ca3ff;
+        }
+
+        .btn-login {
+            background: linear-gradient(90deg, #0066ff, #00aaff);
+            border: none;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .btn-login:hover {
+            transform: scale(1.03);
+            opacity: 0.9;
+        }
+
+        .toggle-theme {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            transition: 0.3s;
+        }
+
+        .toggle-theme:hover {
+            transform: rotate(20deg);
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="toggle-theme" id="toggleTheme"><i class="bi bi-moon-stars-fill"></i></button>
+
+    <div class="login-card">
+        <div class="login-logo">
+            <img src="{% static 'img/logo.png' %}" alt="Logo">
+        </div>
+
+        <h2>Iniciar Sesión</h2>
+
+        <form method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="username" class="form-label">Usuario</label>
+                <input type="text" name="username" id="username" class="form-control" required autofocus>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                <input type="password" name="password" id="password" class="form-control" required>
+            </div>
+
+            {% if form.errors %}
+            <div class="alert alert-danger py-2">
+                <i class="bi bi-exclamation-triangle"></i> Usuario o contraseña incorrectos.
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-login w-100 text-white fw-semibold py-2 mt-3">
+                <i class="bi bi-box-arrow-in-right"></i> Entrar
+            </button>
+
+            <div class="text-center mt-3">
+                <small class="text-muted">¿Olvidaste tu contraseña? <a href="#" class="text-decoration-none">Recuperar</a></small>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- TOGGLE DARK MODE ---
+        const html = document.documentElement;
+        const toggleTheme = document.getElementById("toggleTheme");
+
+        if (localStorage.getItem("theme") === "dark") {
+            html.setAttribute("data-bs-theme", "dark");
+        }
+
+        toggleTheme.addEventListener("click", () => {
+            const isDark = html.getAttribute("data-bs-theme") === "dark";
+            html.setAttribute("data-bs-theme", isDark ? "light" : "dark");
+            localStorage.setItem("theme", isDark ? "light" : "dark");
+        });
+    </script>
+</body>
+</html>

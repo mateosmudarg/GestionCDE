@@ -1,0 +1,209 @@
+{% extends '../layout.html' %}
+{% load static %}
+{% block title %}| Detalles del Evento{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- Título -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="fw-bold mb-0">
+            <i class="bi bi-calendar-event me-2"></i> {{ evento.nombre }}
+        </h2>
+        <a href="{% url 'eventos_lista' %}" class="btn btn-outline-secondary" id="btnVolver">
+            <i class="bi bi-arrow-left-circle me-1"></i> Volver a Eventos
+        </a>
+        <button class="btn btn-outline-success ms-2" id="btnExportar">
+            <i class="bi bi-file-earmark-excel me-1"></i> Exportar XLSX
+        </button>
+    </div>
+
+    <!-- Cards de resumen rápido -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 bg-gradient bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-bag-check me-2"></i> Ventas</h5>
+                    <h2 class="fw-bold">{{ total_ventas }}</h2>
+                    <p class="mb-0">Transacciones</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 bg-gradient bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-cash-coin me-2"></i> Ganancia Bruta</h5>
+                    <h2 class="fw-bold">${{ total_ganancias|floatformat:2 }}</h2>
+                    <p class="mb-0">Ingresos totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 bg-gradient bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-cash-stack me-2"></i> Ganancia Neta</h5>
+                    <h2 class="fw-bold">${{ ganancias_netas|floatformat:2 }}</h2>
+                    <p class="mb-0">Ingresos netos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 bg-gradient bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-box-seam me-2"></i> Productos vendidos</h5>
+                    <h2 class="fw-bold">{{ total_productos }}</h2>
+                    <p class="mb-0">Items vendidos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información general -->
+    <div class="card shadow-sm border-0 mb-4" id="infoEventoCard">
+        <div class="card-body">
+            <h5 class="card-title fw-bold mb-3"><i class="bi bi-info-circle me-2"></i> Información del Evento</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="p-3 rounded" id="cardFecha">
+                        <strong>Fecha:</strong> {{ evento.fecha|date:"d/m/Y" }}
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="p-3 rounded" id="cardUbicacion">
+                        <strong>Ubicación:</strong> {{ evento.lugar|default:"No especificada" }}
+                    </div>
+                </div>
+                <div class="col-12 mb-3">
+                    <div class="p-3 rounded" id="cardDescripcion">
+                        <strong>Descripción:</strong> {{ evento.descripcion|default:"No hay descripción" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos del evento -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold mb-3"><i class="bi bi-bar-chart-line me-2"></i> Productos más vendidos</h5>
+                    <canvas id="productosMasVendidos"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold mb-3"><i class="bi bi-pie-chart-fill me-2"></i> Métodos de pago</h5>
+                    <canvas id="metodosPago"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- XLSX y Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const darkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+
+    // Ajuste de colores para cards de información
+    const cardColors = {
+        fecha: darkMode ? 'bg-secondary text-white' : 'bg-primary text-white',
+        ubicacion: darkMode ? 'bg-dark text-white' : 'bg-secondary text-white',
+        descripcion: darkMode ? 'bg-dark text-white' : 'bg-light text-dark'
+    };
+    document.getElementById('cardFecha').className = `p-3 rounded ${cardColors.fecha}`;
+    document.getElementById('cardUbicacion').className = `p-3 rounded ${cardColors.ubicacion}`;
+    document.getElementById('cardDescripcion').className = `p-3 rounded ${cardColors.descripcion}`;
+    document.getElementById('btnVolver').className = darkMode ? 'btn btn-outline-light' : 'btn btn-outline-secondary';
+
+    // Colores para Charts
+    const colors = {
+        text: darkMode ? '#ffffff' : '#333333',
+        grid: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+        bar: darkMode ? '#ff7b00ff' : '#0026ffff',
+        border: darkMode ? '#d1a0ff' : '#6610f2',
+        tooltipBg: darkMode ? '#222' : '#fff',
+        tooltipText: darkMode ? '#fff' : '#000',
+        pieColors: darkMode ? ['#0d6efd','#198754','#ffc107','#dc3545'] : ['#6610f2','#28a745','#ffc107','#dc3545']
+    };
+
+    // Productos más vendidos
+    new Chart(document.getElementById('productosMasVendidos').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: {{ productos_labels|safe }},
+            datasets: [{
+                label: 'Cantidad vendida',
+                data: {{ productos_data|safe }},
+                backgroundColor: colors.bar,
+                borderColor: colors.border,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { labels: { color: colors.text } },
+                tooltip: {
+                    backgroundColor: colors.tooltipBg,
+                    titleColor: colors.tooltipText,
+                    bodyColor: colors.tooltipText
+                }
+            },
+            scales: {
+                x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+                y: { ticks: { color: colors.text }, grid: { color: colors.grid } }
+            }
+        }
+    });
+
+    // Métodos de pago
+    new Chart(document.getElementById('metodosPago').getContext('2d'), {
+        type: 'pie',
+        data: {
+            labels: {{ pagos_labels|safe }},
+            datasets: [{
+                data: {{ pagos_data|safe }},
+                backgroundColor: colors.pieColors
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { labels: { color: colors.text } },
+                tooltip: {
+                    backgroundColor: colors.tooltipBg,
+                    titleColor: colors.tooltipText,
+                    bodyColor: colors.tooltipText
+                }
+            }
+        }
+    });
+
+    // Exportar XLSX
+    document.getElementById('btnExportar').addEventListener('click', () => {
+        const wb = XLSX.utils.book_new();
+
+        // Productos más vendidos
+        const wsProductos = XLSX.utils.json_to_sheet(
+            {{ productos_export|safe }}
+        );
+        XLSX.utils.book_append_sheet(wb, wsProductos, 'Productos');
+
+        // Métodos de pago
+        const wsPagos = XLSX.utils.json_to_sheet(
+            {{ pagos_export|safe }}
+        );
+        XLSX.utils.book_append_sheet(wb, wsPagos, 'Pagos');
+
+        XLSX.writeFile(wb, `evento_{{ evento.id }}.xlsx`);
+    });
+});
+</script>
+{% endblock %}

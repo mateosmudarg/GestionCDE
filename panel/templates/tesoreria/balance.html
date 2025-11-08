@@ -1,0 +1,20 @@
+{% extends '../layout.html' %}
+{% block title %}| Balance{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <h2 class="fw-bold mb-3"><i class="bi bi-calculator"></i> Balance General</h2>
+    <div class="d-flex gap-3 flex-wrap">
+        <div class="p-3 rounded shadow-sm" style="background:#28a745; color:#fff; flex:1;">
+            <strong>Ingresos:</strong> ${{ total_ingresos }}
+        </div>
+        <div class="p-3 rounded shadow-sm" style="background:#dc3545; color:#fff; flex:1;">
+            <strong>Egresos:</strong> ${{ total_egresos }}
+        </div>
+        <div class="p-3 rounded shadow-sm" style="background:#0066ff; color:#fff; flex:1;">
+            <strong>Balance:</strong> ${{ balance_total }}
+        </div>
+    </div>
+</div>
+
+{% include 'tesoreria/base_tabla.html' with titulo="Todos los movimientos" total=balance_total %}
+{% endblock %}

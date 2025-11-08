@@ -1,0 +1,87 @@
+{% extends '../layout.html' %}
+{% load static %}
+{% block title %}| Lista de Eventos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4">
+        <h2 class="fw-bold mb-3 mb-md-0">
+            <i class="bi bi-calendar-event"></i> Lista de Eventos
+        </h2>
+
+        <div class="d-flex gap-2">
+            <input id="filtro" class="form-control form-control-sm" placeholder="Buscar por nombre, ubicación o descripción">
+            <!-- filtro por fecha (opcional) -->
+            <input id="filtroFecha" type="date" class="form-control form-control-sm d-none d-md-block">
+        </div>
+    </div>
+
+    <div class="table-modern">
+        <div class="table-responsive">
+            <table class="table table-borderless mb-0">
+                <thead>
+                    <tr>
+                        <th>Evento</th>
+                        <th>Fecha</th>
+                        <th>Ubicación</th>
+                        <th>Descripción</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaEventos">
+                    {% for evento in eventos %}
+                    <tr class="{% if evento.es_proximo %}evento-proximo{% endif %}">
+                        <td>
+                            {% if evento.es_proximo %}
+                                <strong>🌟 {{ evento.nombre }} (Próximo)</strong>
+                            {% else %}
+                                {{ evento.nombre }}
+                            {% endif %}
+                        </td>
+                        <td>{{ evento.fecha|date:"d/m/Y" }}</td>
+                        <td>{{ evento.lugar }}</td>
+                        <td class="text-muted">{{ evento.descripcion|truncatechars:90 }}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-primary me-1" title="Ver"><a href="{% url 'evento_detalles' id=evento.id %}"><i class="bi bi-eye-fill"></i></a></button>
+                            <button class="btn btn-sm btn-outline-warning me-1" title="Editar"><i class="bi bi-pencil-fill"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash-fill"></i></button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">No hay eventos disponibles.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // FILTRO EN TIEMPO REAL (por texto)
+    document.getElementById('filtro').addEventListener('input', function() {
+        const q = this.value.toLowerCase().trim();
+        document.querySelectorAll('#tablaEventos tr').forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(q) ? '' : 'none';
+        });
+    });
+
+    // FILTRO POR FECHA (si se habilita)
+    const filtroFecha = document.getElementById('filtroFecha');
+    if (filtroFecha) {
+        filtroFecha.addEventListener('change', function() {
+            const val = this.value; // yyyy-mm-dd
+            document.querySelectorAll('#tablaEventos tr').forEach(row => {
+                if (!val) { row.style.display = ''; return; }
+                const fechaCell = row.children[1]?.textContent?.trim(); // dd/mm/YYYY
+                if (!fechaCell) { row.style.display = 'none'; return; }
+                const parts = fechaCell.split('/');
+                const fechaISO = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : '';
+                row.style.display = (fechaISO === val) ? '' : 'none';
+            });
+        });
+    }
+</script>
+{% endblock %}

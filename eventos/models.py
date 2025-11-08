@@ -2,6 +2,7 @@ from django.db import models
 from cargos.models import Gestion
 
 class Evento(models.Model):
+    id = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True)
     fecha = models.DateField()

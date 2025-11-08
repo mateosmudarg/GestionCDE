@@ -1,0 +1,64 @@
+{% extends '../layout.html' %}
+{% load static %}
+{% block title %}| Calendario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4">
+        <h2 class="fw-bold mb-3 mb-md-0"><i class="bi bi-calendar-event"></i> Calendario</h2>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Calendario -->
+        <div class="col-lg-7">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<!-- JSON seguro para JS -->
+<script type="application/json" id="eventos-json">{{ eventos_json|safe }}</script>
+
+<!-- FullCalendar CSS y JS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+    const eventos = JSON.parse(document.getElementById('eventos-json').textContent);
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        themeSystem: 'bootstrap5',
+        height: 600,
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,listWeek'
+        },
+        events: eventos,
+        eventDidMount: function(info) {
+            if (info.event.start >= new Date()) {
+                info.el.classList.add('bg-success', 'text-white');
+            }
+        },
+    });
+
+    calendar.render();
+
+    // Filtro en la tabla
+    document.getElementById('filtro').addEventListener('input', function() {
+        const q = this.value.toLowerCase().trim();
+        document.querySelectorAll('#tablaEventos tr').forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(q) ? '' : 'none';
+        });
+    });
+});
+
+
+</script>
+{% endblock %}

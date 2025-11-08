@@ -38,6 +38,7 @@ class Venta(models.Model):
     evento = models.ForeignKey(Evento, on_delete=models.SET_NULL, null=True, blank=True)
 
     precio_unitario_venta = models.DecimalField(max_digits=10, decimal_places=2, editable=False, null=True, blank=True)
+    precio_compra = models.DecimalField(max_digits=10, decimal_places=2, editable=False, null=True, blank=True)
     precio_unitario_compra = models.DecimalField(max_digits=10, decimal_places=2, editable=False, null=True, blank=True)
 
     def __str__(self):
@@ -65,5 +66,5 @@ class Venta(models.Model):
         if self.pk is None:
             # Solo al crear: fijar precios unitarios desde el producto
             self.precio_unitario_venta = self.producto.precio_venta
-            self.precio_unitario_compra = self.producto.precio_compra
+            self.precio_unitario_compra = self.producto.precio_unitario_compra
         super().save(*args, **kwargs)

@@ -1,0 +1,79 @@
+{% load static %}
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4">
+    <h2 class="fw-bold mb-3 mb-md-0">
+        <i class="bi bi-wallet2"></i> {{ titulo }}
+    </h2>
+    <div class="d-flex gap-2">
+        <input id="filtro" class="form-control form-control-sm" placeholder="Buscar por descripción o evento">
+        <input id="filtroFecha" type="date" class="form-control form-control-sm d-none d-md-block">
+    </div>
+</div>
+
+<div class="table-modern">
+    <div class="table-responsive">
+        <table class="table table-borderless mb-0">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                    <th>Monto</th>
+                    <th>Fecha</th>
+                    <th>Evento</th>
+                </tr>
+            </thead>
+            <tbody id="tablaMovimientos">
+                {% for mov in movimientos %}
+                <tr>
+                    <td>{{ mov.tipo }}</td>
+                    <td>{{ mov.descripcion }}</td>
+                    <td>${{ mov.monto }}</td>
+                    <td>{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        {% if mov.evento %}
+                            {{ mov.evento.nombre }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">No hay movimientos disponibles.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="2">Total</th>
+                    <th>${{ total|default:0 }}</th>
+                    <th colspan="2"></th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<script>
+    const filtro = document.getElementById('filtro');
+    const filtroFecha = document.getElementById('filtroFecha');
+
+    filtro?.addEventListener('input', () => {
+        const q = filtro.value.toLowerCase().trim();
+        document.querySelectorAll('#tablaMovimientos tr').forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(q) ? '' : 'none';
+        });
+    });
+
+    filtroFecha?.addEventListener('change', () => {
+        const val = filtroFecha.value;
+        document.querySelectorAll('#tablaMovimientos tr').forEach(row => {
+            if (!val) return row.style.display = '';
+            const fechaCell = row.children[3]?.textContent?.trim();
+            if (!fechaCell) return row.style.display = 'none';
+            const [d,m,y] = fechaCell.split('/'); 
+            const fechaISO = `${y}-${m}-${d}`;
+            row.style.display = fechaISO === val ? '' : 'none';
+        });
+    });
+</script>
