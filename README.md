@@ -20,8 +20,8 @@ Sigue estos pasos para poner en marcha el proyecto localmente:
 
 1. **Clonar el repositorio**
 ```bash
-git clone https://github.com/tuusuario/panel-django.git
-cd panel-django
+git clone https://github.com/mateosmudarg/GestionCDE.git
+cd GestionCDE
 ````
 
 2. **Crear y activar entorno virtual**
