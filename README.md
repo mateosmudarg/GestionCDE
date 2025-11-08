@@ -1,6 +1,6 @@
 # Panel de Control Django
 
-Un panel de control moderno y funcional construido con **Django**, **Python** y **Bootstrap**. Permite gestionar información de manera centralizada, visualizar datos con gráficos y personalizar módulos según las necesidades del proyecto.
+Un panel de control moderno y funcional enfocado en los centros de estudiantes construido con **Django**, **Python** y **Bootstrap**. Permite gestionar información de manera centralizada, visualizar datos con gráficos y personalizar módulos según las necesidades del proyecto.
 
 ---
 
@@ -20,8 +20,8 @@ Sigue estos pasos para poner en marcha el proyecto localmente:
 
 1. **Clonar el repositorio**
 ```bash
-git clone https://github.com/tuusuario/panel-django.git
-cd panel-django
+git clone https://github.com/mateosmudarg/GestionCDE.git
+cd GestionCDE
 ````
 
 2. **Crear y activar entorno virtual**
@@ -73,7 +73,7 @@ Accede a [http://127.0.0.1:8000](http://127.0.0.1:8000) para ver el panel.
     - Gestión de torneos: Generación de partidos, Inscripción de equipos, Resultados
     - Reuniones
 - **Comunicados**
-    - Comunicados del CDE públicos para la institución
+    - Comunicados del CDE públicos
 
 ---
 
