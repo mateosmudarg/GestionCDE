@@ -1,0 +1,749 @@
+{% extends '../layout.html' %}
+{% load static %}
+{% block title %}
+  | Ventas Rápidas
+{% endblock %}
+
+{% block content %}
+  <div class="container-fluid px-2 py-3">
+    <!-- Header Compacto -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div class="d-flex align-items-center">
+        <div class="icon-wrapper bg-success rounded-circle p-2 me-2">
+          <i class="bi bi-cart-check text-white fs-5"></i>
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0">Ventas</h4>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary fs-6" id="totalVentas">$0</span>
+      </div>
+    </div>
+
+    <div class="sticky-top pt-2 pb-3" style="z-index: 1020; top: 60px;">
+      <select class="form-select form-select-lg shadow-sm" id="evento" required>
+        <option value="">🎯 Seleccionar Evento</option>
+        {% for ev in eventos %}
+          <option value="{{ ev.id }}">{{ ev.nombre }} - {{ ev.fecha|date:'d/m/Y' }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <div class="input-group input-group-lg">
+        <span class="input-group-text bg-dark border-end-0"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" class="form-control border-start-0" id="buscarProducto" placeholder="Buscar producto..." autocomplete="off" />
+      </div>
+    </div>
+
+    <!-- Productos en Grid Táctil -->
+    <div class="row g-2" id="productosGrid">
+      {% for prod in productos %}
+        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+          <div class="card product-card h-100 border-0 shadow-sm" data-id="{{ prod.id }}" data-nombre="{{ prod.nombre }}" data-precio="{{ prod.precio_venta }}" data-stock="{{ prod.stock }}">
+            <div class="card-body p-2 d-flex flex-column">
+              <!-- Badge de Stock -->
+              <div class="position-absolute top-0 end-0 m-1">
+                <span class="badge stock-badge {% if prod.stock > 10 %}
+                    bg-success
+                  {% elif prod.stock > 0 %}
+                    bg-warning
+                  {% else %}
+                    bg-danger
+                  {% endif %}">
+                  {{ prod.stock }}
+                </span>
+              </div>
+
+              <!-- Icono del Producto -->
+              <div class="product-icon text-center mb-2">
+                <i class="bi bi-box-seam"></i>
+              </div>
+
+              <!-- Información del Producto -->
+              <h6 class="card-title text-center mb-1 product-name">{{ prod.nombre }}</h6>
+              <p class="card-text text-center text-success fw-bold mb-2 product-price">${{ prod.precio_venta }}</p>
+
+              <!-- Controles Táctiles -->
+              <div class="mt-auto">
+                <div class="d-flex justify-content-between align-items-center quantity-controls">
+                  <button class="btn btn-sm btn-outline-danger border-0 p-1 btn-decrease"><i class="bi bi-dash-lg"></i></button>
+                  <span class="quantity-display fw-bold mx-2">0</span>
+                  <button class="btn btn-sm btn-outline-success border-0 p-1 btn-increase"><i class="bi bi-plus-lg"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Carrito Flotante -->
+    <div class="floating-cart">
+      <div class="card border-0 shadow-lg">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Total Carrito</h6>
+            <span class="fw-bold text-success fs-5" id="cartTotal">$0</span>
+          </div>
+          <div class="d-grid gap-2">
+            <button id="btnConfirmar" class="btn btn-success btn-lg py-3" disabled>
+              <i class="bi bi-check-circle me-2"></i>
+              CONFIRMAR VENTA
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmación Rápido -->
+  <div class="modal fade" id="modalConfirm" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title">
+            <i class="bi bi-cart-check me-2"></i>
+            Confirmar Venta
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Método de Pago</label>
+            <select class="form-select form-select-lg" id="medioPagoModal">
+              <option value="Efectivo">💵 Efectivo</option>
+              <option value="Mercado Pago">🔵 Mercado Pago</option>
+            </select>
+          </div>
+
+          <div class="resumen-venta">
+            <h6 class="fw-semibold mb-3">Resumen de Venta:</h6>
+            <div id="modalBody" class="resumen-items"></div>
+            <div class="border-top pt-2 mt-2">
+              <div class="d-flex justify-content-between align-items-center">
+                <strong>Total:</strong>
+                <strong class="text-success fs-5" id="modalTotal">$0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-success px-4" id="btnModalRegistrar">
+            <i class="bi bi-check-lg me-2"></i>
+            Registrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSS Mejorado -->
+  <style>
+    :root {
+      --success-color: #28a745;
+      --danger-color: #dc3545;
+      --warning-color: #ffc107;
+      --primary-color: #0066ff;
+      --border-radius: 12px;
+      --transition: all 0.2s ease;
+    }
+    
+    /* Estilos optimizados para móvil */
+    .product-card {
+      transition: var(--transition);
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      border: 2px solid transparent;
+      background: var(--card-bg);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .product-card:active {
+      transform: scale(0.95);
+      background-color: rgba(var(--primary-rgb), 0.05);
+    }
+    
+    .product-card.active {
+      border-color: var(--primary-color);
+      background-color: rgba(var(--primary-rgb), 0.05);
+      box-shadow: 0 4px 12px rgba(0, 102, 255, 0.2);
+    }
+    
+    .product-card.product-out-of-stock {
+      opacity: 0.5;
+      pointer-events: none;
+      filter: grayscale(0.8);
+    }
+    
+    .product-card.product-out-of-stock::before {
+      content: 'SIN STOCK';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      background: var(--danger-color);
+      color: white;
+      padding: 4px 8px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      border-radius: 4px;
+      z-index: 2;
+    }
+    
+    .quantity-controls {
+      min-height: 40px;
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 8px;
+      padding: 4px;
+    }
+    
+    .quantity-display {
+      font-size: 1.1rem;
+      min-width: 30px;
+      text-align: center;
+      color: var(--text);
+      font-weight: 600;
+    }
+    
+    .btn-increase,
+    .btn-decrease {
+      border-radius: 8px !important;
+      transition: var(--transition);
+      min-width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .btn-increase:active,
+    .btn-decrease:active {
+      transform: scale(0.9);
+    }
+    
+    .btn-increase {
+      background: rgba(var(--success-rgb), 0.1) !important;
+      border: 1px solid rgba(var(--success-rgb), 0.3) !important;
+    }
+    
+    .btn-decrease {
+      background: rgba(var(--danger-rgb), 0.1) !important;
+      border: 1px solid rgba(var(--danger-rgb), 0.3) !important;
+    }
+    
+    /* Icono del producto mejorado */
+    .product-icon {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .product-icon i {
+      font-size: 2rem;
+      color: var(--primary-color);
+      opacity: 0.8;
+    }
+    
+    .product-name {
+      font-size: 0.8rem;
+      line-height: 1.2;
+      height: 2.4rem;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      color: var(--text);
+      font-weight: 600;
+    }
+    
+    .product-price {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    /* Badges de stock */
+    .stock-badge {
+      font-size: 0.7rem;
+      padding: 4px 6px;
+      font-weight: 600;
+    }
+    
+    /* Carrito flotante */
+    .floating-cart {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1rem;
+      background: linear-gradient(transparent, var(--bg) 20%);
+      z-index: 1030;
+      pointer-events: none;
+    }
+    
+    .floating-cart .card {
+      border-radius: 16px;
+      animation: slideUp 0.3s ease;
+      pointer-events: all;
+      background: var(--card-bg);
+    }
+    
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    
+    .pulse-animation {
+      animation: pulse 0.3s ease;
+    }
+    
+    /* Scroll suave */
+    #productosGrid {
+      padding-bottom: 140px; /* Espacio para el carrito flotante */
+    }
+    
+    /* Estados de carga */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    /* Responsive */
+    @media (max-width: 576px) {
+      .container-fluid {
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+    
+      .product-card .card-body {
+        padding: 12px 8px;
+      }
+    
+      .product-name {
+        font-size: 0.75rem;
+      }
+    
+      .product-price {
+        font-size: 0.8rem;
+      }
+    
+      .floating-cart {
+        padding: 0.75rem;
+      }
+    
+      .floating-cart .card-body {
+        padding: 1rem;
+      }
+    
+      #productosGrid {
+        padding-bottom: 120px;
+      }
+    }
+    
+    @media (min-width: 768px) {
+      .product-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      }
+    }
+    
+    /* Modo oscuro */
+    [data-bs-theme='dark'] .product-card {
+      background: var(--card-bg);
+      border-color: var(--border-color);
+    }
+    
+    [data-bs-theme='dark'] .quantity-controls {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    [data-bs-theme='dark'] .floating-cart {
+      background: linear-gradient(transparent, var(--bg) 30%);
+    }
+    
+    [data-bs-theme='dark'] .btn-increase {
+      background: rgba(var(--success-rgb), 0.15) !important;
+      border-color: rgba(var(--success-rgb), 0.4) !important;
+    }
+    
+    [data-bs-theme='dark'] .btn-decrease {
+      background: rgba(var(--danger-rgb), 0.15) !important;
+      border-color: rgba(var(--danger-rgb), 0.4) !important;
+    }
+    
+    /* Estados de feedback */
+    .success-feedback {
+      background: var(--success-color) !important;
+      color: white !important;
+    }
+    
+    .error-feedback {
+      background: var(--danger-color) !important;
+      color: white !important;
+    }
+    
+    /* Animaciones para actualización de stock */
+    .stock-update {
+      animation: stockPulse 0.6s ease;
+    }
+    
+    @keyframes stockPulse {
+      0% {
+        background-color: transparent;
+      }
+      50% {
+        background-color: rgba(var(--warning-rgb), 0.3);
+      }
+      100% {
+        background-color: transparent;
+      }
+    }
+    
+    /* Mejoras para el modal */
+    .resumen-items {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .resumen-items .d-flex {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .resumen-items .d-flex:last-child {
+      border-bottom: none;
+    }
+  </style>
+
+  <!-- JavaScript Completo -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const productCards = document.querySelectorAll('.product-card')
+      const btnConfirmar = document.getElementById('btnConfirmar')
+      const cartTotal = document.getElementById('cartTotal')
+      const modalBody = document.getElementById('modalBody')
+      const modalTotal = document.getElementById('modalTotal')
+      const btnModalRegistrar = document.getElementById('btnModalRegistrar')
+      const eventoSelect = document.getElementById('evento')
+      const buscarProducto = document.getElementById('buscarProducto')
+    
+      let carrito = {}
+      let stockInterval
+    
+      // Función para actualizar el carrito
+      function actualizarCarrito() {
+        let total = 0
+        let totalItems = 0
+    
+        // Calcular totales
+        Object.values(carrito).forEach((item) => {
+          total += item.precio * item.cantidad
+          totalItems += item.cantidad
+        })
+    
+        // Actualizar UI
+        cartTotal.textContent = `$${total.toFixed(2)}`
+        document.getElementById('totalVentas').textContent = `$${total.toFixed(2)}`
+    
+        // Habilitar/deshabilitar botón
+        btnConfirmar.disabled = totalItems === 0 || !eventoSelect.value
+    
+        // Actualizar badge del carrito
+        if (totalItems > 0) {
+          btnConfirmar.innerHTML = `<i class="bi bi-check-circle me-2"></i> CONFIRMAR (${totalItems})`
+          btnConfirmar.classList.add('pulse-animation')
+          setTimeout(() => btnConfirmar.classList.remove('pulse-animation'), 300)
+        } else {
+          btnConfirmar.innerHTML = `<i class="bi bi-check-circle me-2"></i> CONFIRMAR VENTA`
+        }
+      }
+    
+      // Incrementar cantidad
+      function incrementarProducto(card) {
+        const productId = card.dataset.id
+        const stock = parseInt(card.dataset.stock)
+        const precio = parseFloat(card.dataset.precio)
+        const nombre = card.dataset.nombre
+    
+        if (!carrito[productId]) {
+          carrito[productId] = { cantidad: 0, precio: precio, nombre: nombre, stock: stock }
+        }
+    
+        if (carrito[productId].cantidad < stock) {
+          carrito[productId].cantidad++
+          card.querySelector('.quantity-display').textContent = carrito[productId].cantidad
+          card.classList.add('active')
+          actualizarCarrito()
+        }
+      }
+    
+      // Decrementar cantidad
+      function decrementarProducto(card) {
+        const productId = card.dataset.id
+    
+        if (carrito[productId] && carrito[productId].cantidad > 0) {
+          carrito[productId].cantidad--
+          card.querySelector('.quantity-display').textContent = carrito[productId].cantidad
+    
+          if (carrito[productId].cantidad === 0) {
+            card.classList.remove('active')
+          }
+    
+          actualizarCarrito()
+        }
+      }
+    
+      // Actualizar stock desde el servidor
+      async function actualizarStock() {
+        try {
+          const response = await fetch("{% url 'stock_actual' %}")
+          const productos = await response.json()
+    
+          productos.forEach((producto) => {
+            const card = document.querySelector(`.product-card[data-id='${producto.id}']`)
+            if (card) {
+              const oldStock = parseInt(card.dataset.stock)
+              const newStock = producto.stock
+    
+              if (oldStock !== newStock) {
+                // Actualizar datos
+                card.dataset.stock = newStock
+    
+                // Actualizar badge
+                const stockBadge = card.querySelector('.stock-badge')
+                stockBadge.textContent = newStock
+    
+                // Actualizar clase del badge
+                stockBadge.className = `badge stock-badge ${newStock > 10 ? 'bg-success' : newStock > 0 ? 'bg-warning' : 'bg-danger'}`
+    
+                // Actualizar estado del producto
+                if (newStock === 0) {
+                  card.classList.add('product-out-of-stock')
+                  card.classList.remove('active')
+                  // Remover del carrito si estaba
+                  if (carrito[producto.id]) {
+                    carrito[producto.id].cantidad = 0
+                    card.querySelector('.quantity-display').textContent = '0'
+                  }
+                } else {
+                  card.classList.remove('product-out-of-stock')
+                }
+    
+                // Animación de actualización
+                card.classList.add('stock-update')
+                setTimeout(() => card.classList.remove('stock-update'), 600)
+              }
+            }
+          })
+    
+          // Recalcular carrito después de actualizar stock
+          actualizarCarrito()
+        } catch (error) {
+          console.error('Error actualizando stock:', error)
+        }
+      }
+    
+      // Eventos táctiles para productos
+      productCards.forEach((card) => {
+        const increaseBtn = card.querySelector('.btn-increase')
+        const decreaseBtn = card.querySelector('.btn-decrease')
+        const quantityDisplay = card.querySelector('.quantity-display')
+    
+        // Click en botón +
+        increaseBtn.addEventListener('click', (e) => {
+          e.stopPropagation()
+          incrementarProducto(card)
+        })
+    
+        // Click en botón -
+        decreaseBtn.addEventListener('click', (e) => {
+          e.stopPropagation()
+          decrementarProducto(card)
+        })
+    
+        // Click en la tarjeta para agregar rápido
+        card.addEventListener('click', (e) => {
+          if (e.target !== increaseBtn && e.target !== decreaseBtn && !card.classList.contains('product-out-of-stock')) {
+            incrementarProducto(card)
+          }
+        })
+    
+        // Doble click para quitar todo
+        card.addEventListener('dblclick', () => {
+          const productId = card.dataset.id
+          if (carrito[productId] && carrito[productId].cantidad > 0) {
+            carrito[productId].cantidad = 0
+            quantityDisplay.textContent = '0'
+            card.classList.remove('active')
+            actualizarCarrito()
+          }
+        })
+      })
+    
+      // Búsqueda en tiempo real
+      buscarProducto.addEventListener('input', function () {
+        const query = this.value.toLowerCase().trim()
+    
+        productCards.forEach((card) => {
+          const productName = card.dataset.nombre.toLowerCase()
+          if (productName.includes(query)) {
+            card.parentElement.style.display = ''
+          } else {
+            card.parentElement.style.display = 'none'
+          }
+        })
+      })
+    
+      // Confirmar venta
+      btnConfirmar.addEventListener('click', () => {
+        if (!eventoSelect.value) {
+          eventoSelect.focus()
+          eventoSelect.classList.add('is-invalid')
+          setTimeout(() => eventoSelect.classList.remove('is-invalid'), 2000)
+          return
+        }
+    
+        let resumenHTML = ''
+        let total = 0
+    
+        Object.values(carrito).forEach((item) => {
+          if (item.cantidad > 0) {
+            const subtotal = item.precio * item.cantidad
+            total += subtotal
+            resumenHTML += `
+                        <div class="d-flex justify-content-between align-items-center py-1">
+                            <span>${item.nombre} x${item.cantidad}</span>
+                            <strong>$${subtotal.toFixed(2)}</strong>
+                        </div>
+                    `
+          }
+        })
+    
+        modalBody.innerHTML = resumenHTML
+        modalTotal.textContent = `$${total.toFixed(2)}`
+    
+        const modal = new bootstrap.Modal(document.getElementById('modalConfirm'))
+        modal.show()
+      })
+    
+      // Registrar venta
+      btnModalRegistrar.addEventListener('click', async () => {
+        const evento_id = eventoSelect.value
+        const medio_de_pago = document.getElementById('medioPagoModal').value
+    
+        // Deshabilitar botón durante el procesamiento
+        btnModalRegistrar.disabled = true
+        btnModalRegistrar.innerHTML = '<i class="bi bi-arrow-repeat spinner-border spinner-border-sm me-2"></i>Procesando...'
+    
+        try {
+          for (const [producto_id, item] of Object.entries(carrito)) {
+            if (item.cantidad > 0) {
+              const data = new FormData()
+              data.append('producto_id', producto_id)
+              data.append('cantidad', item.cantidad)
+              data.append('medio_de_pago', medio_de_pago)
+              data.append('evento_id', evento_id)
+    
+              const resp = await fetch("{% url 'registrar_venta_ajax' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                body: data
+              })
+    
+              const result = await resp.json()
+              if (!result.success) {
+                throw new Error(result.error)
+              }
+            }
+          }
+    
+          // Limpiar carrito después de éxito
+          carrito = {}
+          productCards.forEach((card) => {
+            card.querySelector('.quantity-display').textContent = '0'
+            card.classList.remove('active')
+          })
+          actualizarCarrito()
+    
+          bootstrap.Modal.getInstance(document.getElementById('modalConfirm')).hide()
+    
+          // Feedback visual de éxito
+          btnConfirmar.innerHTML = '<i class="bi bi-check2-circle me-2"></i> ¡VENTA REGISTRADA!'
+          btnConfirmar.classList.remove('btn-success')
+          btnConfirmar.classList.add('success-feedback')
+    
+          setTimeout(() => {
+            btnConfirmar.innerHTML = '<i class="bi bi-check-circle me-2"></i> CONFIRMAR VENTA'
+            btnConfirmar.classList.remove('success-feedback')
+            btnConfirmar.classList.add('btn-success')
+          }, 2000)
+        } catch (error) {
+          // Feedback visual de error
+          btnConfirmar.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i> ERROR'
+          btnConfirmar.classList.remove('btn-success')
+          btnConfirmar.classList.add('error-feedback')
+    
+          setTimeout(() => {
+            btnConfirmar.innerHTML = '<i class="bi bi-check-circle me-2"></i> CONFIRMAR VENTA'
+            btnConfirmar.classList.remove('error-feedback')
+            btnConfirmar.classList.add('btn-success')
+          }, 2000)
+    
+          alert('Error: ' + error.message)
+        } finally {
+          // Rehabilitar botón
+          btnModalRegistrar.disabled = false
+          btnModalRegistrar.innerHTML = '<i class="bi bi-check-lg me-2"></i>Registrar'
+        }
+      })
+    
+      // Validar evento seleccionado
+      eventoSelect.addEventListener('change', () => {
+        eventoSelect.classList.remove('is-invalid')
+        actualizarCarrito()
+      })
+    
+      // Inicializar estado de productos sin stock
+      productCards.forEach((card) => {
+        if (parseInt(card.dataset.stock) === 0) {
+          card.classList.add('product-out-of-stock')
+        }
+      })
+    
+      // Iniciar polling de stock cada 3 segundos
+      stockInterval = setInterval(actualizarStock, 3000)
+    
+      // Actualizar stock inmediatamente al cargar
+      actualizarStock()
+    
+      // Limpiar intervalo cuando se cierre la página
+      window.addEventListener('beforeunload', () => {
+        if (stockInterval) {
+          clearInterval(stockInterval)
+        }
+      })
+    })
+  </script>
+{% endblock %}

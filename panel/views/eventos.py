@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils.dateparse import parse_date
+from django.utils import timezone
 from django.http import HttpResponse
 from django.core.serializers.json import DjangoJSONEncoder
 from openpyxl import Workbook
@@ -27,23 +28,35 @@ def lista_eventos(request):
 @login_required
 def calendario_eventos(request):
     try:
+        hoy = timezone.now().date()
         eventos = Evento.objects.all().select_related('gestion').order_by('fecha')
+        
         eventos_json = [
             {
                 "id": e.id,
                 "title": e.nombre,
                 "start": e.fecha.isoformat(),
-                "description": e.descripcion,
-                "lugar": e.lugar,
+                "description": e.descripcion or "Sin descripción",
+                "lugar": e.lugar or "Por definir",
                 "gestion": e.gestion.nombre if e.gestion else "Sin gestión",
+                "recaudacion": f"${e.recaudacion_total:.2f}",
+                "className": "evento-proximo" if e.fecha >= hoy else "evento-pasado"
             }
             for e in eventos
         ]
-    except Exception:
+        
+        # Eventos próximos para el panel lateral
+        eventos_proximos = eventos.filter(fecha__gte=hoy)[:5]
+        
+    except Exception as e:
         eventos = []
         eventos_json = []
+        eventos_proximos = []
+        print(f"Error en calendario: {e}")
+
     context = {
         "eventos": eventos,
+        "eventos_proximos": eventos_proximos,
         "eventos_json": json.dumps(eventos_json, cls=DjangoJSONEncoder),
     }
     return render(request, "eventos/calendario.html", context)

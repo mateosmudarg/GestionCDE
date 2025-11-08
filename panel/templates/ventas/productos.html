@@ -1,97 +1,642 @@
 {% extends '../layout.html' %}
+{% load static %}
 {% block title %}| Productos{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-3 mb-md-0">
-            <i class="bi bi-box-seam"></i> Productos
-        </h2>
+<div class="container-fluid px-0 px-md-3">
 
-        <form method="get" class="d-flex" role="search">
-            <input 
-                type="text" 
-                name="q" 
-                class="form-control me-2" 
-                placeholder="Buscar producto..." 
-                value="{{ query }}">
-            <button class="btn btn-outline-primary" type="submit">
-                <i class="bi bi-search"></i>
+    <!-- Header Mejorado -->
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4">
+        <div class="d-flex align-items-center mb-3 mb-md-0">
+            <div class="icon-wrapper bg-primary rounded-circle p-3 me-3">
+                <i class="bi bi-box-seam text-white fs-4"></i>
+            </div>
+            <div>
+                <h2 class="fw-bold mb-1">Gestión de Productos</h2>
+                <p class="text-muted mb-0">Administra el inventario y precios</p>
+            </div>
+        </div>
+        
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modalAgregarProducto">
+                <i class="bi bi-plus-circle me-2"></i> Nuevo Producto
             </button>
-        </form>
+        </div>
     </div>
 
-    <div class="table-responsive">
-        <table class="table align-middle table-hover table-modern text-center">
-            <thead class="table-light">
-                <tr>
-                    <th>Nombre</th>
-                    <th>
-                        <a href="?{% if query %}q={{ query }}&{% endif %}order={% if order == 'precio_venta' %}-precio_venta{% else %}precio_venta{% endif %}"
-                           class="text-decoration-none text-white">
-                            Precio de Venta
-                            {% if order == 'precio_venta' %}
-                                <i class="bi bi-arrow-down"></i>
-                            {% elif order == '-precio_venta' %}
-                                <i class="bi bi-arrow-up"></i>
-                            {% else %}
-                                <i class="bi bi-arrow-down-up"></i>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th>
-                        <a href="?{% if query %}q={{ query }}&{% endif %}order={% if order == 'stock' %}-stock{% else %}stock{% endif %}"
-                           class="text-decoration-none text-white">
-                            Stock
-                            {% if order == 'stock' %}
-                                <i class="bi bi-arrow-down"></i>
-                            {% elif order == '-stock' %}
-                                <i class="bi bi-arrow-up"></i>
-                            {% else %}
-                                <i class="bi bi-arrow-down-up"></i>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th>Precio de Compra</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for producto in productos %}
-                <tr>
-                    <td>{{ producto.nombre }}</td>
-                    <td>${{ producto.precio_venta }}</td>
-                    <td>{{ producto.stock }}</td>
-                    <td>${{ producto.precio_compra }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="text-muted text-center py-3">
-                        <i class="bi bi-box"></i> No hay productos registrados.
-                    </td>
-                </tr>
+    <!-- Métricas Principales -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-primary rounded-circle mx-auto mb-3">
+                        <i class="bi bi-box text-white"></i>
+                    </div>
+                    <h3 class="fw-bold text-primary mb-1">{{ total_productos }}</h3>
+                    <p class="text-muted mb-0 small">Total Productos</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-success rounded-circle mx-auto mb-3">
+                        <i class="bi bi-check-circle text-white"></i>
+                    </div>
+                    <h3 class="fw-bold text-success mb-1">{{ productos_activos }}</h3>
+                    <p class="text-muted mb-0 small">Productos Activos</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-info rounded-circle mx-auto mb-3">
+                        <i class="bi bi-box-arrow-down text-white"></i>
+                    </div>
+                    <h3 class="fw-bold text-info mb-1">{{ stock_total }}</h3>
+                    <p class="text-muted mb-0 small">Stock Total</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-warning rounded-circle mx-auto mb-3">
+                        <i class="bi bi-currency-dollar text-white"></i>
+                    </div>
+                    <h3 class="fw-bold text-warning mb-1">${{ valor_inventario_total|floatformat:2 }}</h3>
+                    <p class="text-muted mb-0 small">Valor Inventario</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros Mejorados -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label fw-semibold">Buscar Producto</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" name="q" class="form-control border-start-0" 
+                               placeholder="Nombre del producto..." value="{{ query }}">
+                    </div>
+                </div>
+                
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-semibold">Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="todos" {% if estado == 'todos' %}selected{% endif %}>Todos los productos</option>
+                        <option value="activos" {% if estado == 'activos' %}selected{% endif %}>Solo activos</option>
+                        <option value="inactivos" {% if estado == 'inactivos' %}selected{% endif %}>Solo inactivos</option>
+                    </select>
+                </div>
+                
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-semibold">Ordenar por</label>
+                    <select name="order" class="form-select">
+                        <option value="nombre" {% if order == 'nombre' %}selected{% endif %}>Nombre (A-Z)</option>
+                        <option value="-nombre" {% if order == '-nombre' %}selected{% endif %}>Nombre (Z-A)</option>
+                        <option value="precio_venta" {% if order == 'precio_venta' %}selected{% endif %}>Precio venta (Menor)</option>
+                        <option value="-precio_venta" {% if order == '-precio_venta' %}selected{% endif %}>Precio venta (Mayor)</option>
+                        <option value="stock" {% if order == 'stock' %}selected{% endif %}>Stock (Menor)</option>
+                        <option value="-stock" {% if order == '-stock' %}selected{% endif %}>Stock (Mayor)</option>
+                    </select>
+                </div>
+                
+                <div class="col-12 col-md-2">
+                    <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center" type="submit">
+                        <i class="bi bi-funnel me-2"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Productos -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light py-3">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <i class="bi bi-list-ul me-2"></i>
+                    Lista de Productos
+                </h5>
+                <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                    <span class="text-muted small">{{ productos.paginator.count }} productos</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Producto</th>
+                            <th class="text-center">Stock</th>
+                            <th class="text-end">Precio Compra</th>
+                            <th class="text-end">Precio Venta</th>
+                            <th class="text-center">Margen</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                        <tr class="producto-row {% if not producto.activo %}table-secondary{% endif %}">
+                            <td class="ps-4">
+                                <div class="fw-semibold">{{ producto.nombre }}</div>
+                                {% if producto.total_vendido %}
+                                <div class="text-muted small">
+                                    {{ producto.total_ventas }} ventas • {{ producto.total_vendido }} unidades
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge {% if producto.stock == 0 %}bg-danger{% elif producto.stock < 10 %}bg-warning{% else %}bg-success{% endif %}">
+                                    {{ producto.stock }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <span class="text-muted">${{ producto.precio_compra }}</span>
+                            </td>
+                            <td class="text-end">
+                                <strong class="text-success">${{ producto.precio_venta }}</strong>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark">
+                                    {{ producto.margen_ganancia|floatformat:1 }}%
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge {% if producto.activo %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ producto.activo|yesno:"Activo,Inactivo" }}
+                                </span>
+                            </td>
+                            <td class="text-center pe-4">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button class="btn btn-outline-warning" onclick="editarProducto({{ producto.id }})" title="Editar producto">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn {% if producto.activo %}btn-outline-secondary{% else %}btn-outline-success{% endif %}" 
+                                            onclick="toggleActivo({{ producto.id }})" 
+                                            title="{{ producto.activo|yesno:'Desactivar,Activar' }} producto">
+                                        <i class="bi bi-{% if producto.activo %}x-circle{% else %}check-circle{% endif %}"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="bi bi-box display-4 text-muted mb-3"></i>
+                                <h5 class="text-muted">No hay productos registrados</h5>
+                                <p class="text-muted mb-0">Comienza agregando el primer producto</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    {% if productos.has_other_pages %}
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <div class="text-muted small">
+            Mostrando {{ productos.start_index }}-{{ productos.end_index }} de {{ productos.paginator.count }} productos
+        </div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                {% if productos.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ productos.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if order %}&order={{ order }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in productos.paginator.page_range %}
+                    {% if num == productos.number %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > productos.number|add:-3 and num < productos.number|add:3 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if order %}&order={{ order }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
                 {% endfor %}
-            </tbody>
-        </table>
+                
+                {% if productos.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ productos.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if order %}&order={{ order }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para Agregar Producto -->
+<div class="modal fade" id="modalAgregarProducto" tabindex="-1" aria-labelledby="modalAgregarProductoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalAgregarProductoLabel">
+                    <i class="bi bi-plus-circle me-2"></i>Agregar Nuevo Producto
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formAgregarProducto">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre del Producto</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required 
+                               placeholder="Ej: Coca-Cola 500ml">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label for="stock" class="form-label">Stock Inicial</label>
+                                <input type="number" class="form-control" id="stock" name="stock" 
+                                       value="0" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label for="precio_compra" class="form-label">Precio de Compra</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="precio_compra" name="precio_compra" 
+                                           step="0.01" min="0" required placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="precio_venta" class="form-label">Precio de Venta</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="precio_venta" name="precio_venta" 
+                                   step="0.01" min="0" required placeholder="0.00">
+                        </div>
+                        <div class="form-text">
+                            <span id="margenPreview" class="text-muted">Margen: 0% • Ganancia: $0.00</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnGuardarProducto">
+                        <i class="bi bi-check-circle me-2"></i>Guardar Producto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Editar Producto -->
+<div class="modal fade" id="modalEditarProducto" tabindex="-1" aria-labelledby="modalEditarProductoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="modalEditarProductoLabel">
+                    <i class="bi bi-pencil me-2"></i>Editar Producto
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditarProducto">
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id" name="id">
+                    
+                    <div class="mb-3">
+                        <label for="edit_nombre" class="form-label">Nombre del Producto</label>
+                        <input type="text" class="form-control" id="edit_nombre" name="nombre" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label for="edit_stock" class="form-label">Stock</label>
+                                <input type="number" class="form-control" id="edit_stock" name="stock" min="0" required>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label for="edit_precio_compra" class="form-label">Precio de Compra</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="edit_precio_compra" name="precio_compra" 
+                                           step="0.01" min="0" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_precio_venta" class="form-label">Precio de Venta</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="edit_precio_venta" name="precio_venta" 
+                                   step="0.01" min="0" required>
+                        </div>
+                        <div class="form-text">
+                            <span id="edit_margenPreview" class="text-muted">Margen: 0% • Ganancia: $0.00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="edit_activo" name="activo" checked>
+                            <label class="form-check-label" for="edit_activo">Producto activo</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning" id="btnActualizarProducto">
+                        <i class="bi bi-check-circle me-2"></i>Actualizar Producto
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <style>
-.table-modern {
+.stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
-.table-modern thead {
-    background-color: var(--bs-gray-100);
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
 }
-.table-modern tbody tr:hover {
-    background-color: rgba(0, 123, 255, 0.05);
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-[data-bs-theme="dark"] .table-modern thead {
-    background-color: #2b2b2b;
+
+.icon-wrapper {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-[data-bs-theme="dark"] .table-modern tbody tr:hover {
-    background-color: rgba(255,255,255,0.05);
+
+.producto-row:hover {
+    background: rgba(var(--primario-rgb), 0.03);
+    transition: all 0.2s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stat-card .card-body {
+        padding: 1rem;
+    }
+    
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .stat-card {
+    background: var(--card-bg);
+}
+
+[data-bs-theme="dark"] .card-header.bg-light {
+    background: var(--border-color) !important;
+    color: var(--text);
+}
+
+[data-bs-theme="dark"] .table-light {
+    background: var(--border-color) !important;
+    color: var(--text);
 }
 </style>
+
+<script>
+// Calcular margen en tiempo real
+function calcularMargen(precioCompra, precioVenta) {
+    if (precioCompra > 0 && precioVenta > 0) {
+        const margen = ((precioVenta - precioCompra) / precioCompra) * 100;
+        const ganancia = precioVenta - precioCompra;
+        return { margen, ganancia };
+    }
+    return { margen: 0, ganancia: 0 };
+}
+
+// Actualizar preview de margen
+function actualizarMargenPreview() {
+    const compra = parseFloat(document.getElementById('precio_compra').value) || 0;
+    const venta = parseFloat(document.getElementById('precio_venta').value) || 0;
+    const { margen, ganancia } = calcularMargen(compra, venta);
+    
+    document.getElementById('margenPreview').textContent = 
+        `Margen: ${margen.toFixed(1)}% • Ganancia: $${ganancia.toFixed(2)}`;
+    
+    const preview = document.getElementById('margenPreview');
+    if (margen < 0) {
+        preview.className = 'text-danger';
+    } else if (margen < 20) {
+        preview.className = 'text-warning';
+    } else {
+        preview.className = 'text-success';
+    }
+}
+
+// Actualizar preview de margen en edición
+function actualizarMargenEditPreview() {
+    const compra = parseFloat(document.getElementById('edit_precio_compra').value) || 0;
+    const venta = parseFloat(document.getElementById('edit_precio_venta').value) || 0;
+    const { margen, ganancia } = calcularMargen(compra, venta);
+    
+    document.getElementById('edit_margenPreview').textContent = 
+        `Margen: ${margen.toFixed(1)}% • Ganancia: $${ganancia.toFixed(2)}`;
+    
+    const preview = document.getElementById('edit_margenPreview');
+    if (margen < 0) {
+        preview.className = 'text-danger';
+    } else if (margen < 20) {
+        preview.className = 'text-warning';
+    } else {
+        preview.className = 'text-success';
+    }
+}
+
+// Agregar producto
+document.getElementById('formAgregarProducto').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const btn = document.getElementById('btnGuardarProducto');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spinner-border spinner-border-sm me-2"></i>Guardando...';
+    
+    try {
+        const formData = new FormData(this);
+        
+        const response = await fetch("{% url 'crear_producto' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalAgregarProducto'));
+            modal.hide();
+            this.reset();
+            location.reload();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error al guardar el producto: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Guardar Producto';
+    }
+});
+
+// Editar producto - URL CORREGIDA
+async function editarProducto(productoId) {
+    try {
+        // CORRECCIÓN: Cambiar 'ventas' por 'productos'
+        const response = await fetch(`/productos/${productoId}/editar/`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const producto = result.producto;
+            
+            document.getElementById('edit_id').value = producto.id;
+            document.getElementById('edit_nombre').value = producto.nombre;
+            document.getElementById('edit_stock').value = producto.stock;
+            document.getElementById('edit_precio_compra').value = producto.precio_compra;
+            document.getElementById('edit_precio_venta').value = producto.precio_venta;
+            document.getElementById('edit_activo').checked = producto.activo;
+            
+            actualizarMargenEditPreview();
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalEditarProducto'));
+            modal.show();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error al cargar el producto: ' + error.message);
+    }
+}
+
+// Enviar formulario de edición
+document.getElementById('formEditarProducto').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const btn = document.getElementById('btnActualizarProducto');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spinner-border spinner-border-sm me-2"></i>Actualizando...';
+    
+    try {
+        const formData = new FormData(this);
+        formData.append('activo', document.getElementById('edit_activo').checked);
+        
+        const productoId = document.getElementById('edit_id').value;
+        const response = await fetch(`/productos/${productoId}/editar/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarProducto'));
+            modal.hide();
+            location.reload();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error al actualizar el producto: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Actualizar Producto';
+    }
+});
+
+// Toggle activo/inactivo
+async function toggleActivo(productoId) {
+    if (!confirm('¿Estás seguro de que deseas cambiar el estado de este producto?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/productos/${productoId}/toggle-activo/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+    
+        const result = await response.json();
+        
+        if (result.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error al cambiar el estado: ' + error.message);
+    }
+}
+
+// Event listeners para cálculos en tiempo real
+document.getElementById('precio_compra').addEventListener('input', actualizarMargenPreview);
+document.getElementById('precio_venta').addEventListener('input', actualizarMargenPreview);
+document.getElementById('edit_precio_compra').addEventListener('input', actualizarMargenEditPreview);
+document.getElementById('edit_precio_venta').addEventListener('input', actualizarMargenEditPreview);
+
+// Inicializar tooltips solo si bootstrap está disponible
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof bootstrap !== 'undefined') {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+});
+</script>
 {% endblock %}

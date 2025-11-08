@@ -3,17 +3,119 @@
 {% block title %}| Calendario{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid px-0 px-md-3">
 
+    <!-- Header mejorado -->
     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4">
-        <h2 class="fw-bold mb-3 mb-md-0"><i class="bi bi-calendar-event"></i> Calendario</h2>
+        <div class="d-flex align-items-center mb-3 mb-md-0">
+            <div class="icon-wrapper bg-primary rounded-circle p-3 me-3">
+                <i class="bi bi-calendar-event text-white fs-4"></i>
+            </div>
+            <div>
+                <h2 class="fw-bold mb-1">Calendario de Eventos</h2>
+                <p class="text-muted mb-0">Gestiona y visualiza todos los eventos del centro</p>
+            </div>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary d-flex align-items-center" id="btnHoy">
+                <i class="bi bi-calendar-check me-2"></i>
+                <span class="d-none d-sm-inline">Hoy</span>
+            </button>
+        </div>
     </div>
 
     <div class="row g-4">
 
-        <!-- Calendario -->
-        <div class="col-lg-7">
-            <div id="calendar"></div>
+        <!-- Calendario Principal -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-3 p-md-4">
+                    <div id="calendar" class="calendario-moderno"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Lateral -->
+        <div class="col-xl-4 col-lg-5">
+            <!-- Próximos Eventos -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Próximos Eventos
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if eventos_proximos %}
+                        <div class="list-group list-group-flush">
+                            {% for evento in eventos_proximos %}
+                            <div class="list-group-item border-0 py-3 px-4 {% if forloop.first %}border-top-0{% endif %}">
+                                <div class="d-flex align-items-start">
+                                    <div class="date-indicator bg-success rounded text-center text-white me-3">
+                                        <div class="fw-bold fs-6">{{ evento.fecha|date:"d" }}</div>
+                                        <div class="small">{{ evento.fecha|date:"M" }}</div>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1 fw-semibold">{{ evento.nombre }}</h6>
+                                        <p class="text-muted small mb-1">
+                                            <i class="bi bi-geo-alt me-1"></i>{{ evento.lugar|default:"Por definir" }}
+                                        </p>
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <span class="badge bg-light text-dark small">
+                                                <i class="bi bi-tag me-1"></i>{{ evento.gestion.nombre|default:"General" }}
+                                            </span>
+                                            {% if evento.recaudacion_total > 0 %}
+                                            <span class="badge bg-success small">
+                                                <i class="bi bi-currency-dollar me-1"></i>{{ evento.recaudacion_total }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-calendar-x display-4 text-muted mb-3"></i>
+                            <p class="text-muted mb-0">No hay eventos próximos</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Estadísticas Rápidas -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light py-3 text-dark">
+                    <h6 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-graph-up me-2"></i>
+                        Resumen del Mes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="border-end border-light">
+                                <div class="h4 text-primary mb-1">{{ eventos.count }}</div>
+                                <small class="text-muted">Total</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border-end border-light">
+                                <div class="h4 text-success mb-1">{{ eventos_proximos.count }}</div>
+                                <small class="text-muted">Próximos</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div>
+                                <div class="h4 text-secondary mb-1" id="eventosPasados">{{ eventos.count|add:eventos_proximos.count|default:0 }}</div>
+                                <small class="text-muted">Pasados</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -24,41 +126,254 @@
 <!-- FullCalendar CSS y JS -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/locales/es.global.min.js"></script>
+
+<style>
+.calendario-moderno {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.calendario-moderno .fc {
+    --fc-border-color: var(--border-color);
+    --fc-page-bg-color: var(--card-bg);
+    --fc-neutral-bg-color: var(--bg);
+    --fc-list-event-hover-bg-color: rgba(var(--primario-rgb), 0.1);
+}
+
+.calendario-moderno .fc .fc-toolbar {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.calendario-moderno .fc .fc-toolbar-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.calendario-moderno .fc .fc-button {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.calendario-moderno .fc .fc-button:hover {
+    background: var(--primario);
+    border-color: var(--primario);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.calendario-moderno .fc .fc-button-primary:not(:disabled).fc-button-active {
+    background: var(--primario);
+    border-color: var(--primario);
+    color: white;
+}
+
+.calendario-moderno .fc .fc-daygrid-day-number {
+    color: var(--text);
+    font-weight: 500;
+}
+
+.calendario-moderno .fc .fc-day-today {
+    background: rgba(var(--primario-rgb), 0.1) !important;
+}
+
+.calendario-moderno .fc .fc-event {
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.calendario-moderno .evento-proximo {
+    background: linear-gradient(135deg, var(--primario), var(--secundario));
+    border-left: 3px solid #28a745;
+}
+
+.calendario-moderno .evento-pasado {
+    background: #6c757d;
+    opacity: 0.8;
+}
+
+.date-indicator {
+    min-width: 50px;
+    padding: 8px 4px;
+}
+
+.icon-wrapper {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .calendario-moderno .fc .fc-toolbar {
+        padding: 0.5rem 0;
+    }
+    
+    .calendario-moderno .fc .fc-toolbar-title {
+        font-size: 1.25rem;
+    }
+    
+    .calendario-moderno .fc .fc-button {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.875rem;
+    }
+    
+    .icon-wrapper {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .icon-wrapper i {
+        font-size: 1.25rem !important;
+    }
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .calendario-moderno .fc .fc-daygrid-day.fc-day-today {
+    background: rgba(var(--primario-rgb), 0.2) !important;
+}
+
+[data-bs-theme="dark"] .calendario-moderno .fc .fc-col-header-cell {
+    background: var(--card-bg);
+}
+
+[data-bs-theme="dark"] .calendario-moderno .fc .fc-daygrid-day {
+    background: var(--card-bg);
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('calendar');
-    const eventos = JSON.parse(document.getElementById('eventos-json').textContent);
+    const eventosData = JSON.parse(document.getElementById('eventos-json').textContent);
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         themeSystem: 'bootstrap5',
-        height: 600,
+        height: 'auto',
+        locale: 'es',
+        firstDay: 1, // Lunes como primer día de la semana
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek,listWeek'
+            right: 'dayGridMonth,timeGridWeek,listMonth'
         },
-        events: eventos,
+        buttonText: {
+            today: 'Hoy',
+            month: 'Mes',
+            week: 'Semana',
+            list: 'Lista'
+        },
+        events: eventosData,
         eventDidMount: function(info) {
-            if (info.event.start >= new Date()) {
-                info.el.classList.add('bg-success', 'text-white');
-            }
+            // Tooltip con información del evento
+            const evento = info.event;
+            const extendedProps = evento.extendedProps;
+            const tooltipContent = `
+                <strong>${evento.title}</strong><br>
+                <small>Fecha: ${evento.start.toLocaleDateString('es-ES')}</small><br>
+                <small>Lugar: ${extendedProps.lugar}</small><br>
+                <small>Gestión: ${extendedProps.gestion}</small>
+                ${extendedProps.recaudacion !== '$0.00' ? `<br><small>Recaudación: ${extendedProps.recaudacion}</small>` : ''}
+            `;
+            
+            info.el.setAttribute('data-bs-toggle', 'tooltip');
+            info.el.setAttribute('data-bs-html', 'true');
+            info.el.setAttribute('title', tooltipContent);
         },
+        eventClick: function(info) {
+            const evento = info.event;
+            const extendedProps = evento.extendedProps;
+            
+            // Crear modal de detalles del evento
+            const modalHtml = `
+                <div class="modal fade" id="eventoModal" tabindex="-1" aria-labelledby="eventoModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="eventoModalLabel">
+                                    <i class="bi bi-calendar-event me-2"></i>${evento.title}
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <p><strong><i class="bi bi-calendar me-2"></i>Fecha:</strong> ${evento.start.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                        <p><strong><i class="bi bi-geo-alt me-2"></i>Lugar:</strong> ${extendedProps.lugar}</p>
+                                        <p><strong><i class="bi bi-tag me-2"></i>Gestión:</strong> ${extendedProps.gestion}</p>
+                                        ${extendedProps.recaudacion !== '$0.00' ? `<p><strong><i class="bi bi-currency-dollar me-2"></i>Recaudación:</strong> ${extendedProps.recaudacion}</p>` : ''}
+                                        <p><strong><i class="bi bi-chat-text me-2"></i>Descripción:</strong></p>
+                                        <p class="border rounded p-3 bg-light">${extendedProps.description}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <a href="/admin/eventos/evento/${evento.id}/change/" class="btn btn-primary">
+                                    <i class="bi bi-pencil me-2"></i>Editar Evento
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remover modal anterior si existe
+            const existingModal = document.getElementById('eventoModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Agregar nuevo modal al DOM
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Mostrar modal
+            const eventoModal = new bootstrap.Modal(document.getElementById('eventoModal'));
+            eventoModal.show();
+            
+            // Remover modal del DOM cuando se cierre
+            document.getElementById('eventoModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        },
+        datesSet: function() {
+            // Inicializar tooltips después de renderizar el calendario
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
     });
 
     calendar.render();
 
-    // Filtro en la tabla
-    document.getElementById('filtro').addEventListener('input', function() {
-        const q = this.value.toLowerCase().trim();
-        document.querySelectorAll('#tablaEventos tr').forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(q) ? '' : 'none';
-        });
+    // Botón "Hoy"
+    document.getElementById('btnHoy').addEventListener('click', function() {
+        calendar.today();
     });
+
+    // Calcular eventos pasados
+    // Calcular eventos pasados
+    function calcularEventosPasados() {
+        const total = {{ eventos.count }};
+        const proximos = {{ eventos_proximos.count }};
+        const pasados = total - proximos;
+        document.getElementById('eventosPasados').textContent = pasados > 0 ? pasados : 0;
+    }
+    calcularEventosPasados();
 });
-
-
 </script>
 {% endblock %}

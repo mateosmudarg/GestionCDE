@@ -1,20 +1,497 @@
 {% extends '../layout.html' %}
-{% block title %}| Balance{% endblock %}
-{% block content %}
-<div class="mb-4">
-    <h2 class="fw-bold mb-3"><i class="bi bi-calculator"></i> Balance General</h2>
-    <div class="d-flex gap-3 flex-wrap">
-        <div class="p-3 rounded shadow-sm" style="background:#28a745; color:#fff; flex:1;">
-            <strong>Ingresos:</strong> ${{ total_ingresos }}
-        </div>
-        <div class="p-3 rounded shadow-sm" style="background:#dc3545; color:#fff; flex:1;">
-            <strong>Egresos:</strong> ${{ total_egresos }}
-        </div>
-        <div class="p-3 rounded shadow-sm" style="background:#0066ff; color:#fff; flex:1;">
-            <strong>Balance:</strong> ${{ balance_total }}
-        </div>
-    </div>
-</div>
+{% load static %}
+{% block title %}
+  | Balance General
+{% endblock %}
 
-{% include 'tesoreria/base_tabla.html' with titulo="Todos los movimientos" total=balance_total %}
+{% block content %}
+  <div class="container-fluid px-0 px-md-3">
+    <!-- Header del Balance -->
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4">
+      <div class="d-flex align-items-center mb-3 mb-md-0">
+        <div class="icon-wrapper bg-primary rounded-circle p-3 me-3">
+          <i class="bi bi-graph-up text-white fs-4"></i>
+        </div>
+        <div>
+          <h2 class="fw-bold mb-1">Balance General</h2>
+          <p class="text-muted mb-0">Estado financiero completo del centro</p>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'ingresos_tesoreria' %}" class="btn btn-outline-success d-flex align-items-center"><i class="bi bi-arrow-up-circle me-2"></i> Ingresos</a>
+        <a href="{% url 'egresos_tesoreria' %}" class="btn btn-outline-danger d-flex align-items-center"><i class="bi bi-arrow-down-circle me-2"></i> Egresos</a>
+      </div>
+    </div>
+
+    <!-- Métricas Principales -->
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-md-4">
+        <div class="card stat-card border-0 shadow-sm">
+          <div class="card-body text-center">
+            <div class="stat-icon bg-success rounded-circle mx-auto mb-3">
+              <i class="bi bi-arrow-up-circle text-white"></i>
+            </div>
+            <h3 class="fw-bold text-success mb-1">${{ total_ingresos|floatformat:2 }}</h3>
+            <p class="text-muted mb-0 small">Total Ingresos</p>
+            <div class="mt-2">
+              <span class="badge bg-success">{{ ingresos_count }} transacciones</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <div class="card stat-card border-0 shadow-sm">
+          <div class="card-body text-center">
+            <div class="stat-icon bg-danger rounded-circle mx-auto mb-3">
+              <i class="bi bi-arrow-down-circle text-white"></i>
+            </div>
+            <h3 class="fw-bold text-danger mb-1">${{ total_egresos|floatformat:2 }}</h3>
+            <p class="text-muted mb-0 small">Total Egresos</p>
+            <div class="mt-2">
+              <span class="badge bg-danger">{{ egresos_count }} transacciones</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <div class="card stat-card border-0 shadow-sm {% if balance_total >= 0 %}
+            
+            border-success
+
+          {% else %}
+            
+            border-danger
+
+          {% endif %}">
+          <div class="card-body text-center">
+            <div class="stat-icon {% if balance_total >= 0 %}
+                
+                bg-success
+
+              {% else %}
+                
+                bg-danger
+
+              {% endif %} rounded-circle mx-auto mb-3">
+              <i class="bi bi-calculator text-white"></i>
+            </div>
+            <h3 class="fw-bold {% if balance_total >= 0 %}
+                
+                text-success
+
+              {% else %}
+                
+                text-danger
+
+              {% endif %} mb-1">
+              ${{ balance_total|floatformat:2 }}
+            </h3>
+            <p class="text-muted mb-0 small">Balance Final</p>
+            <div class="mt-2">
+              <span class="badge {% if balance_total >= 0 %}
+                  
+                  bg-success
+
+                {% else %}
+                  
+                  bg-danger
+
+                {% endif %}">
+                {% if balance_total >= 0 %}
+                  Superávit
+                {% else %}
+                  Déficit
+                {% endif %}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos y Estadísticas -->
+    <div class="row g-4 mb-4">
+      <!-- Distribución Ingresos vs Egresos -->
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-light py-3">
+            <h5 class="mb-0 d-flex align-items-center">
+              <i class="bi bi-pie-chart-fill me-2"></i>
+              Distribución Financiera
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="distribucionFinanciera"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen por Eventos -->
+    <div class="row g-4 mb-4">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-light py-3">
+            <h5 class="mb-0 d-flex align-items-center">
+              <i class="bi bi-calendar-event me-2"></i>
+              Resumen por Eventos
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              {% for evento in eventos_con_balance %}
+                <div class="col-12 col-sm-6 col-lg-3">
+                  <div class="card border-0 bg-light h-100">
+                    <div class="card-body text-center">
+                      <h6 class="card-title mb-2 text-dark">{{ evento.nombre }}</h6>
+                      <div class="d-flex justify-content-between small mb-2">
+                        <span class="text-success">Ing: ${{ evento.ingresos|floatformat:2 }}</span>
+                        <span class="text-danger">Eg: ${{ evento.egresos|floatformat:2 }}</span>
+                      </div>
+                      <span class="badge {% if evento.balance >= 0 %}
+                          
+                          bg-success
+
+                        {% else %}
+                          
+                          bg-danger
+
+                        {% endif %}">
+                        Balance: ${{ evento.balance|floatformat:2 }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              {% empty %}
+                <div class="col-12 text-center py-4">
+                  <i class="bi bi-calendar-x display-4 text-muted mb-3"></i>
+                  <p class="text-muted mb-0">No hay eventos con movimientos</p>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de Movimientos -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-light py-3">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+          <h5 class="mb-0 d-flex align-items-center">
+            <i class="bi bi-list-ul me-2"></i>
+            Todos los Movimientos
+          </h5>
+          <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+            <span class="text-muted small">{{ movimientos.count }} movimientos</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body p-0">
+        <!-- Filtros Mejorados -->
+        <div class="p-3 border-bottom">
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-4">
+              <label class="form-label fw-semibold small">Buscar</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="filtro" class="form-control border-start-0" placeholder="Descripción, evento..." />
+              </div>
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label fw-semibold small">Tipo</label>
+              <select id="filtroTipo" class="form-select">
+                <option value="">Todos los tipos</option>
+                <option value="Ingreso">Ingresos</option>
+                <option value="Egreso">Egresos</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label fw-semibold small">Fecha</label>
+              <input type="date" id="filtroFecha" class="form-control" />
+            </div>
+
+            <div class="col-12 col-md-2">
+              <button id="btnLimpiarFiltros" class="btn btn-outline-secondary w-100"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-4">Tipo</th>
+                <th>Descripción</th>
+                <th class="text-end">Monto</th>
+                <th class="text-center">Fecha</th>
+                <th class="text-center pe-4">Evento</th>
+              </tr>
+            </thead>
+            <tbody id="tablaMovimientos">
+              {% for mov in movimientos %}
+                <tr class="movimiento-row">
+                  <td class="ps-4">
+                    {% if mov.tipo == 'Ingreso' %}
+                      <span class="badge bg-success d-flex align-items-center justify-content-center gap-1"><i class="bi bi-arrow-up-circle"></i> Ingreso</span>
+                    {% else %}
+                      <span class="badge bg-danger d-flex align-items-center justify-content-center gap-1"><i class="bi bi-arrow-down-circle"></i> Egreso</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="fw-medium">{{ mov.descripcion }}</div>
+                    {% if mov.detalles %}
+                      <div class="text-muted small">{{ mov.detalles }}</div>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <strong class="{% if mov.tipo == 'Ingreso' %}
+                        
+                        text-success
+
+                      {% else %}
+                        
+                        text-danger
+
+                      {% endif %}">
+                      ${{ mov.monto|floatformat:2 }}
+                    </strong>
+                  </td>
+                  <td class="text-center">
+                    <div class="fw-medium">{{ mov.fecha|date:'d/m/Y' }}</div>
+                    <div class="text-muted small">{{ mov.fecha|date:'H:i' }}</div>
+                  </td>
+                  <td class="text-center pe-4">
+                    {% if mov.evento %}
+                      <span class="badge bg-light text-dark">{{ mov.evento.nombre }}</span>
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center py-5">
+                    <i class="bi bi-wallet display-4 text-muted mb-3"></i>
+                    <h5 class="text-muted">No hay movimientos registrados</h5>
+                    <p class="text-muted mb-0">No se han realizado transacciones aún</p>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="table-light">
+              <tr>
+                <th colspan="2" class="ps-4">Total General</th>
+                <th class="text-end">${{ balance_total|floatformat:2 }}</th>
+                <th colspan="2"></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    .stat-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border-radius: 12px;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .icon-wrapper {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 250px;
+      width: 100%;
+    }
+    
+    .movimiento-row:hover {
+      background: rgba(var(--primario-rgb), 0.03);
+      transition: all 0.2s ease;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .stat-card .card-body {
+        padding: 1rem;
+      }
+    
+      .stat-icon {
+        width: 40px;
+        height: 40px;
+      }
+    
+      .chart-container {
+        height: 200px;
+      }
+    
+      .table-responsive {
+        font-size: 0.875rem;
+      }
+    }
+    
+    /* Dark mode adjustments */
+    [data-bs-theme='dark'] .stat-card {
+      background: var(--card-bg);
+    }
+    
+    [data-bs-theme='dark'] .card-header.bg-light {
+      background: var(--border-color) !important;
+      color: var(--text);
+    }
+    
+    [data-bs-theme='dark'] .table-light {
+      background: var(--border-color) !important;
+      color: var(--text);
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark'
+      const textColor = isDark ? '#e6eef8' : '#222'
+      const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+    
+      // Colores para gráficos
+      const colors = {
+        success: isDark ? 'rgba(40, 167, 69, 0.8)' : 'rgba(40, 167, 69, 0.8)',
+        danger: isDark ? 'rgba(220, 53, 69, 0.8)' : 'rgba(220, 53, 69, 0.8)',
+        primary: isDark ? 'rgba(0, 102, 255, 0.8)' : 'rgba(0, 102, 255, 0.8)'
+      }
+    
+      const distribucionCtx = document.getElementById('distribucionFinanciera').getContext('2d')
+    
+      // Convertir las variables Django a valores numéricos seguros
+      const totalIngresos = parseFloat('{{ total_ingresos|default:0 }}'.replace(/,/g, ''))
+      const totalEgresos = parseFloat('{{ total_egresos|default:0 }}'.replace(/,/g, ''))
+    
+      new Chart(distribucionCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Ingresos', 'Egresos'],
+          datasets: [
+            {
+              data: [totalIngresos, totalEgresos],
+              backgroundColor: [colors.success, colors.danger],
+              borderColor: isDark ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+              borderWidth: 2,
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '60%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: textColor,
+                padding: 15,
+                usePointStyle: true
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  const value = context.parsed
+                  const total = totalIngresos + totalEgresos
+                  const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0
+                  return ` $${value.toFixed(2)} (${percentage}%)`
+                }
+              }
+            }
+          }
+        }
+      })
+      // Filtros
+      const filtro = document.getElementById('filtro')
+      const filtroTipo = document.getElementById('filtroTipo')
+      const filtroFecha = document.getElementById('filtroFecha')
+      const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros')
+    
+      function aplicarFiltros() {
+        const texto = filtro.value.toLowerCase().trim()
+        const tipo = filtroTipo.value
+        const fecha = filtroFecha.value
+    
+        document.querySelectorAll('#tablaMovimientos .movimiento-row').forEach((row) => {
+          const textoRow = row.textContent.toLowerCase()
+          const tipoRow = row.querySelector('td:first-child').textContent.includes('Ingreso') ? 'Ingreso' : 'Egreso'
+          const fechaRow = row.querySelector('td:nth-child(4)').textContent.trim().split(' ')[0] // Solo la fecha
+    
+          let mostrar = true
+    
+          // Filtro por texto
+          if (texto && !textoRow.includes(texto)) {
+            mostrar = false
+          }
+    
+          // Filtro por tipo
+          if (tipo && tipoRow !== tipo) {
+            mostrar = false
+          }
+    
+          // Filtro por fecha
+          if (fecha) {
+            const [d, m, y] = fechaRow.split('/')
+            const fechaISORow = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+            if (fechaISORow !== fecha) {
+              mostrar = false
+            }
+          }
+    
+          row.style.display = mostrar ? '' : 'none'
+        })
+      }
+    
+      filtro?.addEventListener('input', aplicarFiltros)
+      filtroTipo?.addEventListener('change', aplicarFiltros)
+      filtroFecha?.addEventListener('change', aplicarFiltros)
+    
+      btnLimpiarFiltros?.addEventListener('click', () => {
+        filtro.value = ''
+        filtroTipo.value = ''
+        filtroFecha.value = ''
+        aplicarFiltros()
+      })
+    
+      // Inicializar tooltips
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'))
+      tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+      })
+    })
+  </script>
 {% endblock %}

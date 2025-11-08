@@ -3,85 +3,331 @@
 {% block title %}| Lista de Eventos{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid px-0 px-md-3">
+    <!-- Header Mejorado -->
     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4">
-        <h2 class="fw-bold mb-3 mb-md-0">
-            <i class="bi bi-calendar-event"></i> Lista de Eventos
-        </h2>
+        <div class="d-flex align-items-center mb-3 mb-md-0">
+            <div class="icon-wrapper bg-primary rounded-circle p-3 me-3">
+                <i class="bi bi-calendar-event text-white fs-4"></i>
+            </div>
+            <div>
+                <h2 class="fw-bold mb-1">Lista de Eventos</h2>
+                <p class="text-muted mb-0">Gestiona todos los eventos del centro de estudiantes</p>
+            </div>
+        </div>
 
-        <div class="d-flex gap-2">
-            <input id="filtro" class="form-control form-control-sm" placeholder="Buscar por nombre, ubicación o descripción">
-            <!-- filtro por fecha (opcional) -->
-            <input id="filtroFecha" type="date" class="form-control form-control-sm d-none d-md-block">
+        <div class="d-flex flex-wrap gap-2">
+            <div class="search-container position-relative">
+                <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                <input id="filtro" class="form-control form-control-sm ps-5" placeholder="Buscar eventos...">
+            </div>
+            <select id="filtroEstado" class="form-select form-select-sm">
+                <option value="">Todos los eventos</option>
+                <option value="proximo">Próximos</option>
+                <option value="pasado">Pasados</option>
+            </select>
+            <a href="#" class="btn btn-primary btn-sm d-flex align-items-center">
+                <i class="bi bi-plus-circle me-1"></i>
+                <span class="d-none d-md-inline">Nuevo</span>
+            </a>
         </div>
     </div>
 
-    <div class="table-modern">
-        <div class="table-responsive">
-            <table class="table table-borderless mb-0">
-                <thead>
-                    <tr>
-                        <th>Evento</th>
-                        <th>Fecha</th>
-                        <th>Ubicación</th>
-                        <th>Descripción</th>
-                        <th class="text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaEventos">
-                    {% for evento in eventos %}
-                    <tr class="{% if evento.es_proximo %}evento-proximo{% endif %}">
-                        <td>
+    <!-- Tarjetas para Mobile -->
+    <div class="d-block d-lg-none">
+        {% for evento in eventos %}
+        <div class="card event-card mb-3 border-0 shadow-sm {% if evento.es_proximo %}evento-proximo-card{% endif %}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="flex-grow-1">
+                        <h6 class="card-title mb-1 fw-semibold">
                             {% if evento.es_proximo %}
-                                <strong>🌟 {{ evento.nombre }} (Próximo)</strong>
-                            {% else %}
-                                {{ evento.nombre }}
+                            <span class="badge bg-success me-2">Próximo</span>
                             {% endif %}
-                        </td>
-                        <td>{{ evento.fecha|date:"d/m/Y" }}</td>
-                        <td>{{ evento.lugar }}</td>
-                        <td class="text-muted">{{ evento.descripcion|truncatechars:90 }}</td>
-                        <td class="text-center">
-                            <button class="btn btn-sm btn-outline-primary me-1" title="Ver"><a href="{% url 'evento_detalles' id=evento.id %}"><i class="bi bi-eye-fill"></i></a></button>
-                            <button class="btn btn-sm btn-outline-warning me-1" title="Editar"><i class="bi bi-pencil-fill"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash-fill"></i></button>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-4">No hay eventos disponibles.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            {{ evento.nombre }}
+                        </h6>
+                        <div class="d-flex align-items-center text-muted small mb-2">
+                            <i class="bi bi-calendar-event me-1"></i>
+                            <span>{{ evento.fecha|date:"d/m/Y" }}</span>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary border-0" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'evento_detalles' id=evento.id %}"><i class="bi bi-eye me-2"></i>Ver detalles</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2"></i>Editar</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i>Eliminar</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center text-muted small mb-3">
+                    <i class="bi bi-geo-alt me-1"></i>
+                    <span class="text-truncate">{{ evento.lugar|default:"Sin ubicación" }}</span>
+                </div>
+                
+                <p class="card-text text-muted small mb-3">{{ evento.descripcion|truncatechars:120|default:"Sin descripción" }}</p>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-tag me-1"></i>{{ evento.gestion.nombre|default:"General" }}
+                    </span>
+                    {% if evento.recaudacion_total > 0 %}
+                    <span class="badge bg-success">
+                        <i class="bi bi-currency-dollar me-1"></i>{{ evento.recaudacion_total }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5">
+            <i class="bi bi-calendar-x display-4 text-muted mb-3"></i>
+            <h5 class="text-muted">No hay eventos disponibles</h5>
+            <p class="text-muted">Crea el primer evento para comenzar</p>
+            <a href="#" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Crear Evento
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Tabla para Desktop -->
+    <div class="d-none d-lg-block">
+        <div class="table-modern">
+            <div class="table-responsive">
+                <table class="table table-borderless mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Evento</th>
+                            <th>Fecha</th>
+                            <th>Ubicación</th>
+                            <th>Gestión</th>
+                            <th class="text-center">Recaudación</th>
+                            <th class="text-center pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaEventos">
+                        {% for evento in eventos %}
+                        <tr class="evento-row {% if evento.es_proximo %}evento-proximo{% endif %}">
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    {% if evento.es_proximo %}
+                                    <div class="proximo-indicator bg-success rounded-circle me-3" title="Evento próximo"></div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="fw-semibold">{{ evento.nombre }}</div>
+                                        <div class="text-muted small text-truncate" style="max-width: 200px;">
+                                            {{ evento.descripcion|truncatechars:60|default:"Sin descripción" }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-medium">{{ evento.fecha|date:"d/m/Y" }}</div>
+                                <div class="text-muted small">{{ evento.fecha|date:"l"|title }}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-geo-alt text-muted me-2"></i>
+                                    <span>{{ evento.lugar|default:"-" }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark">
+                                    {{ evento.gestion.nombre|default:"General" }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                {% if evento.recaudacion_total > 0 %}
+                                <span class="badge bg-success">
+                                    ${{ evento.recaudacion_total }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center pe-4">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'evento_detalles' id=evento.id %}" class="btn btn-outline-primary" title="Ver detalles">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </a>
+                                    <button class="btn btn-outline-warning" title="Editar">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" title="Eliminar">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-5">
+                                <i class="bi bi-calendar-x display-4 d-block mb-3"></i>
+                                <h5>No hay eventos disponibles</h5>
+                                <p class="mb-0">Crea el primer evento para comenzar</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <!-- Paginación -->
+    {% if eventos.has_other_pages %}
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <div class="text-muted small">
+            Mostrando {{ eventos.start_index }}-{{ eventos.end_index }} de {{ eventos.paginator.count }} eventos
+        </div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                {% if eventos.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ eventos.previous_page_number }}">Anterior</a>
+                </li>
+                {% endif %}
+                
+                {% for i in eventos.paginator.page_range %}
+                <li class="page-item {% if eventos.number == i %}active{% endif %}">
+                    <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if eventos.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ eventos.next_page_number }}">Siguiente</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
 </div>
 
-<script>
-    // FILTRO EN TIEMPO REAL (por texto)
-    document.getElementById('filtro').addEventListener('input', function() {
-        const q = this.value.toLowerCase().trim();
-        document.querySelectorAll('#tablaEventos tr').forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(q) ? '' : 'none';
-        });
-    });
+<style>
+.evento-proximo-card {
+    border-left: 4px solid #28a745 !important;
+}
 
-    // FILTRO POR FECHA (si se habilita)
-    const filtroFecha = document.getElementById('filtroFecha');
-    if (filtroFecha) {
-        filtroFecha.addEventListener('change', function() {
-            const val = this.value; // yyyy-mm-dd
-            document.querySelectorAll('#tablaEventos tr').forEach(row => {
-                if (!val) { row.style.display = ''; return; }
-                const fechaCell = row.children[1]?.textContent?.trim(); // dd/mm/YYYY
-                if (!fechaCell) { row.style.display = 'none'; return; }
-                const parts = fechaCell.split('/');
-                const fechaISO = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : '';
-                row.style.display = (fechaISO === val) ? '' : 'none';
-            });
+.evento-row:hover {
+    background: rgba(var(--primario-rgb), 0.03);
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+.proximo-indicator {
+    width: 12px;
+    height: 12px;
+    animation: pulse 2s infinite;
+}
+
+.event-card {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
+
+.event-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+}
+
+.search-container {
+    min-width: 250px;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Mejoras para la tabla */
+.table-modern {
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--card-bg);
+}
+
+.table-modern thead th {
+    background: var(--primario);
+    color: white;
+    border: none;
+    font-weight: 600;
+    padding: 1rem 0.75rem;
+}
+
+.table-modern tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .search-container {
+        min-width: 200px;
+    }
+    
+    .event-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filtro = document.getElementById('filtro');
+    const filtroEstado = document.getElementById('filtroEstado');
+    
+    // Filtro por texto
+    filtro.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        filtrarEventos();
+    });
+    
+    // Filtro por estado
+    filtroEstado.addEventListener('change', function() {
+        filtrarEventos();
+    });
+    
+    function filtrarEventos() {
+        const query = filtro.value.toLowerCase().trim();
+        const estado = filtroEstado.value;
+        
+        document.querySelectorAll('.evento-row, .event-card').forEach(element => {
+            const texto = element.textContent.toLowerCase();
+            const esProximo = element.classList.contains('evento-proximo') || 
+                            element.classList.contains('evento-proximo-card');
+            
+            let mostrar = true;
+            
+            // Filtro por texto
+            if (query && !texto.includes(query)) {
+                mostrar = false;
+            }
+            
+            // Filtro por estado
+            if (estado === 'proximo' && !esProximo) {
+                mostrar = false;
+            } else if (estado === 'pasado' && esProximo) {
+                mostrar = false;
+            }
+            
+            element.style.display = mostrar ? '' : 'none';
         });
     }
+    
+    // Inicializar tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 </script>
 {% endblock %}

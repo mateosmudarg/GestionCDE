@@ -1,20 +1,69 @@
 from decimal import Decimal
 from django.db import models, transaction
 from django.core.exceptions import ObjectDoesNotExist
-
 from eventos.models import Evento
 from tesoreria.models import Movimiento
+from django.core.validators import MinValueValidator
 
 
 class Producto(models.Model):
     """Productos que el centro puede vender."""
     nombre = models.CharField(max_length=50, help_text="Nombre del producto")
-    stock = models.PositiveIntegerField(default=0, help_text="Stock disponible")
-    precio_compra = models.DecimalField(max_digits=10, decimal_places=2, help_text="Precio de compra por unidad")
-    precio_venta = models.DecimalField(max_digits=10, decimal_places=2, help_text="Precio de venta al público")
+    stock = models.PositiveIntegerField(
+        default=0, 
+        help_text="Stock disponible",
+        validators=[MinValueValidator(0)]
+    )
+    precio_compra = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        help_text="Precio de compra por unidad",
+        validators=[MinValueValidator(0)]
+    )
+    precio_venta = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        help_text="Precio de venta al público",
+        validators=[MinValueValidator(0)]
+    )
+    activo = models.BooleanField(default=True, help_text="¿El producto está disponible?")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name_plural = "Productos"
 
     def __str__(self):
         return self.nombre
+
+    @property
+    def margen_ganancia(self):
+        """Calcula el margen de ganancia porcentual"""
+        if self.precio_compra > 0:
+            return ((self.precio_venta - self.precio_compra) / self.precio_compra) * 100
+        return 0
+
+    @property
+    def ganancia_unitaria(self):
+        """Ganancia por unidad vendida"""
+        return self.precio_venta - self.precio_compra
+
+    @property
+    def valor_inventario(self):
+        """Valor total del inventario de este producto"""
+        return self.stock * self.precio_compra
+
+    def actualizar_stock(self, cantidad):
+        """Actualiza el stock de forma segura"""
+        self.stock += cantidad
+        if self.stock < 0:
+            self.stock = 0
+        self.save()
+
+    def hay_stock_suficiente(self, cantidad):
+        """Verifica si hay stock suficiente"""
+        return self.stock >= cantidad
 
 
 class Venta(models.Model):
@@ -38,7 +87,6 @@ class Venta(models.Model):
     evento = models.ForeignKey(Evento, on_delete=models.SET_NULL, null=True, blank=True)
 
     precio_unitario_venta = models.DecimalField(max_digits=10, decimal_places=2, editable=False, null=True, blank=True)
-    precio_compra = models.DecimalField(max_digits=10, decimal_places=2, editable=False, null=True, blank=True)
     precio_unitario_compra = models.DecimalField(max_digits=10, decimal_places=2, editable=False, null=True, blank=True)
 
     def __str__(self):
@@ -66,5 +114,5 @@ class Venta(models.Model):
         if self.pk is None:
             # Solo al crear: fijar precios unitarios desde el producto
             self.precio_unitario_venta = self.producto.precio_venta
-            self.precio_unitario_compra = self.producto.precio_unitario_compra
+            self.precio_unitario_compra = self.producto.precio_compra
         super().save(*args, **kwargs)

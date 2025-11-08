@@ -1,124 +1,528 @@
 {% extends 'layout.html' %}
+{% load static %}
 {% block title %}| Inicio{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container-fluid px-0 px-md-3">
 
-  <h2 class="fw-bold mb-4 d-flex align-items-center">
-    <i class="bi bi-speedometer2 me-2"></i> Dashboard General
-  </h2>
+    <!-- Header del Dashboard -->
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4">
+        <div class="d-flex align-items-center mb-3 mb-md-0">
+            <div class="icon-wrapper bg-primary rounded-circle p-3 me-3">
+                <i class="bi bi-speedometer2 text-white fs-4"></i>
+            </div>
+            <div>
+                <h2 class="fw-bold mb-1">Dashboard General</h2>
+                <p class="text-muted mb-0">Resumen completo del centro de estudiantes</p>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary fs-6">{{ fecha_actual|date:"d M Y" }}</span>
+        </div>
+    </div>
 
-  <!-- Tarjetas de resumen -->
-  <div class="row g-3 mb-4">
-    <div class="col-md-6 col-lg-3">
-      <div class="card shadow-sm border-0 bg-gradient bg-primary text-white">
-        <div class="card-body">
-          <h5 class="card-title"><i class="bi bi-calendar-event me-2"></i>Eventos</h5>
-          <h2 class="fw-bold">{{ total_eventos }}</h2>
-          <p class="mb-0">Eventos registrados</p>
+    <!-- Métricas Principales -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-primary rounded-circle mx-auto mb-3">
+                        <i class="bi bi-calendar-event text-white"></i>
+                    </div>
+                    <h3 class="fw-bold text-primary mb-1">{{ total_eventos }}</h3>
+                    <p class="text-muted mb-0 small">Total Eventos</p>
+                    <div class="mt-2">
+                        <span class="badge bg-success">{{ eventos_proximos }} próximos</span>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-      <div class="card shadow-sm border-0 bg-gradient bg-success text-white">
-        <div class="card-body">
-          <h5 class="card-title"><i class="bi bi-bag-check me-2"></i>Ventas</h5>
-          <h2 class="fw-bold">{{ total_ventas }}</h2>
-          <p class="mb-0">Transacciones totales</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-      <div class="card shadow-sm border-0 bg-gradient bg-warning text-black" id="gananciasCard">
-        <div class="card-body">
-          <h5 class="card-title"><i class="bi bi-cash-coin me-2"></i>Ganancias</h5>
-          <h2 class="fw-bold">${{ total_ganancias|floatformat:2 }}</h2>
-          <p class="mb-0">Recaudado en total</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-      <div class="card shadow-sm border-0 bg-gradient bg-warning text-black" id="gananciasNetasCard">
-        <div class="card-body">
-          <h5 class="card-title"><i class="bi bi-cash-coin me-2"></i>Ganancias Netas</h5>
-          <h2 class="fw-bold">${{ ganancias_netas|floatformat:2 }}</h2>
-          <p class="mb-0">Ganancias finales</p>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Gráficos -->
-  <div class="row g-4">
-    <div class="col-lg-6">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <h5 class="card-title fw-bold mb-3"><i class="bi bi-bar-chart-line me-2"></i>Productos más vendidos</h5>
-          <canvas id="productosMasVendidos"></canvas>
+        <div class="col-6 col-md-3">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-success rounded-circle mx-auto mb-3">
+                        <i class="bi bi-cart-check text-white"></i>
+                    </div>
+                    <h3 class="fw-bold text-success mb-1">{{ total_ventas }}</h3>
+                    <p class="text-muted mb-0 small">Total Ventas</p>
+                    <div class="mt-2">
+                        <span class="badge bg-info">{{ ventas_mes }} este mes</span>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-warning rounded-circle mx-auto mb-3">
+                        <i class="bi bi-currency-dollar text-white"></i>
+                    </div>
+                    <h3 class="fw-bold text-warning mb-1">${{ total_ganancias|floatformat:2 }}</h3>
+                    <p class="text-muted mb-0 small">Ingresos Totales</p>
+                    <div class="mt-2">
+                        <span class="badge bg-primary">${{ ganancias_mes|floatformat:2 }} mes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-info rounded-circle mx-auto mb-3">
+                        <i class="bi bi-graph-up-arrow text-white"></i>
+                    </div>
+                    <h3 class="fw-bold text-info mb-1">${{ ganancias_netas|floatformat:2 }}</h3>
+                    <p class="text-muted mb-0 small">Ganancias Netas</p>
+                    <div class="mt-2">
+                        <span class="badge bg-success">{{ margen_ganancia }}% margen</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
+
+    <div class="row g-4">
+        <!-- Gráfico de Productos Más Vendidos -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-trophy me-2"></i>
+                        Productos Más Vendidos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="productosMasVendidos"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Métricas de Rendimiento -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-speedometer me-2"></i>
+                        Rendimiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="performance-stats">
+                        <div class="performance-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-cart-plus text-success me-2"></i>
+                                <span>Ticket Promedio</span>
+                            </div>
+                            <strong class="text-success">${{ ticket_promedio|floatformat:2 }}</strong>
+                        </div>
+                        
+                        <div class="performance-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-box-arrow-in-up text-primary me-2"></i>
+                                <span>Productos/Venta</span>
+                            </div>
+                            <strong class="text-primary">{{ productos_por_venta|floatformat:1 }}</strong>
+                        </div>
+                        
+                        <div class="performance-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-currency-exchange text-warning me-2"></i>
+                                <span>Margen Neto</span>
+                            </div>
+                            <strong class="text-warning">{{ margen_ganancia }}%</strong>
+                        </div>
+                        
+                        <div class="performance-item d-flex justify-content-between align-items-center py-2">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-lightning-charge text-info me-2"></i>
+                                <span>Eficiencia</span>
+                            </div>
+                            <strong class="text-info">{{ eficiencia_ventas }}%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-2">
+        <!-- Distribución de Ventas por Medio de Pago -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-pie-chart-fill me-2"></i>
+                        Medios de Pago
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="distribucionPagos"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ventas por Evento -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-bar-chart-line me-2"></i>
+                        Top Eventos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="ventasPorEvento"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actividad Reciente -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Actividad Reciente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="recent-activity">
+                        {% for venta in ventas_recientes %}
+                        <div class="activity-item d-flex align-items-start py-2 border-bottom">
+                            <div class="activity-icon bg-primary rounded-circle me-3">
+                                <i class="bi bi-cart-check text-white"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">{{ venta.producto.nombre }}</div>
+                                <div class="text-muted small">
+                                    ${{ venta.total }} • {{ venta.fecha_hora|timesince }} ago
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-cart-x display-4 text-muted mb-3"></i>
+                            <p class="text-muted mb-0">No hay actividad reciente</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-lightning me-2"></i>
+                        Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6 col-md-3">
+                            <a href="{% url 'registrar_ventas' %}" class="btn btn-success w-100 h-100 py-3 d-flex flex-column align-items-center justify-content-center">
+                                <i class="bi bi-cart-plus fs-2 mb-2"></i>
+                                <span>Nueva Venta</span>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="{% url 'eventos_lista' %}" class="btn btn-primary w-100 h-100 py-3 d-flex flex-column align-items-center justify-content-center">
+                                <i class="bi bi-calendar-event fs-2 mb-2"></i>
+                                <span>Ver Eventos</span>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="{% url 'historial_ventas' %}" class="btn btn-warning w-100 h-100 py-3 d-flex flex-column align-items-center justify-content-center">
+                                <i class="bi bi-receipt fs-2 mb-2"></i>
+                                <span>Historial</span>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="{% url 'balance_tesoreria' %}" class="btn btn-info w-100 h-100 py-3 d-flex flex-column align-items-center justify-content-center">
+                                <i class="bi bi-graph-up fs-2 mb-2"></i>
+                                <span>Finanzas</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+.stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 12px;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-wrapper {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+}
+
+.performance-stats {
+    padding: 0.5rem 0;
+}
+
+.performance-item:last-child {
+    border-bottom: none !important;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.recent-activity {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stat-card .card-body {
+        padding: 1rem;
+    }
+    
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .chart-container {
+        height: 200px;
+    }
+    
+    .btn .fs-2 {
+        font-size: 1.5rem !important;
+    }
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .stat-card {
+    background: var(--card-bg);
+}
+
+[data-bs-theme="dark"] .card-header.bg-light {
+    background: var(--border-color) !important;
+    color: var(--text);
+}
+</style>
+
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const ctx = document.getElementById('productosMasVendidos').getContext('2d');
-
-    // Detectar modo oscuro en Bootstrap 5
-    const darkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-
-    // Definir colores según modo
+document.addEventListener('DOMContentLoaded', function() {
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const textColor = isDark ? '#e6eef8' : '#222';
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    
+    // Colores para gráficos
     const colors = {
-        text: darkMode ? '#ffffff' : '#333333',
-        grid: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-        bar: darkMode ? '#ff7b00ff' : '#2bff00ff',
-        border: darkMode ? '#d1a0ff' : '#a52fff',
-        tooltipBg: darkMode ? '#222' : '#fff',
-        tooltipText: darkMode ? '#fff' : '#000'
+        primary: isDark ? 'rgba(0, 102, 255, 0.8)' : 'rgba(0, 102, 255, 0.8)',
+        success: isDark ? 'rgba(40, 167, 69, 0.8)' : 'rgba(40, 167, 69, 0.8)',
+        warning: isDark ? 'rgba(255, 193, 7, 0.8)' : 'rgba(255, 193, 7, 0.8)',
+        info: isDark ? 'rgba(23, 162, 184, 0.8)' : 'rgba(23, 162, 184, 0.8)',
+        pie: isDark ? 
+            ['rgba(40, 167, 69, 0.8)', 'rgba(23, 162, 184, 0.8)'] : // Solo 2 colores para 2 medios de pago
+            ['rgba(40, 167, 69, 0.8)', 'rgba(23, 162, 184, 0.8)']
     };
 
-    new Chart(ctx, {
+    // Productos Más Vendidos
+    const productosCtx = document.getElementById('productosMasVendidos').getContext('2d');
+    new Chart(productosCtx, {
         type: 'bar',
         data: {
             labels: {{ labels_productos|safe }},
             datasets: [{
-                label: 'Cantidad vendida',
+                label: 'Cantidad Vendida',
                 data: {{ data_productos|safe }},
-                backgroundColor: colors.bar,
-                borderColor: colors.border,
-                borderWidth: 1
+                backgroundColor: colors.primary,
+                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                borderWidth: 1,
+                borderRadius: 6,
+                borderSkipped: false,
             }]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    labels: {
-                        color: colors.text // color de la leyenda
-                    }
+                    display: false
                 },
                 tooltip: {
-                    backgroundColor: colors.tooltipBg,
-                    titleColor: colors.tooltipText,
-                    bodyColor: colors.tooltipText
+                    backgroundColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)',
+                    titleColor: textColor,
+                    bodyColor: textColor,
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                    borderWidth: 1
                 }
             },
             scales: {
                 x: {
-                    ticks: { color: colors.text },
-                    grid: { color: colors.grid }
+                    grid: {
+                        color: gridColor,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: textColor
+                    }
                 },
                 y: {
-                    ticks: { color: colors.text },
-                    grid: { color: colors.grid }
+                    beginAtZero: true,
+                    grid: {
+                        color: gridColor,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: textColor
+                    }
                 }
             }
         }
     });
+
+    // Distribución de Pagos - SOLO EFECTIVO Y MERCADO PAGO
+    const pagosCtx = document.getElementById('distribucionPagos').getContext('2d');
+    new Chart(pagosCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['💵 Efectivo', '🔵 Mercado Pago'],
+            datasets: [{
+                data: {{ distribucion_pagos|safe }},
+                backgroundColor: colors.pie,
+                borderColor: isDark ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                borderWidth: 2,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: textColor,
+                        padding: 15,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return ` $${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Ventas por Evento - DATOS REALES
+    const eventosCtx = document.getElementById('ventasPorEvento').getContext('2d');
+    new Chart(eventosCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ labels_eventos|safe }},
+            datasets: [{
+                label: 'Ventas ($)',
+                data: {{ data_eventos|safe }},
+                backgroundColor: colors.success,
+                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: textColor,
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: gridColor
+                    },
+                    ticks: {
+                        color: textColor,
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Actualizar fecha cada minuto
+    function actualizarFecha() {
+        const now = new Date();
+        const options = { day: 'numeric', month: 'short', year: 'numeric' };
+        document.querySelector('.badge.bg-primary').textContent = now.toLocaleDateString('es-ES', options);
+    }
+    
+    setInterval(actualizarFecha, 60000);
 });
 </script>
-
-
 {% endblock %}

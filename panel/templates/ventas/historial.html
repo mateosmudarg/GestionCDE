@@ -1,163 +1,486 @@
 {% extends '../layout.html' %}
+{% load static %}
 {% block title %}| Historial de Ventas{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-3 mb-md-0 text-body">
-            <i class="bi bi-receipt"></i> Historial de Ventas
-        </h2>
+<div class="container-fluid px-0 px-md-3">
 
-        <form method="get" class="d-flex flex-wrap gap-2">
-            <input type="text" name="q" class="form-control form-control-sm bg-body text-body border-secondary" placeholder="Buscar producto..." value="{{ query }}">
-            <select name="medio" class="form-select form-select-sm bg-body text-body border-secondary">
-                <option value="">Todos los medios</option>
-                <option value="Efectivo" {% if medio == 'Efectivo' %}selected{% endif %}>Efectivo</option>
-                <option value="Mercado Pago" {% if medio == 'Mercado Pago' %}selected{% endif %}>Mercado Pago</option>
-            </select>
-            <button class="btn btn-outline-primary btn-sm" type="submit">
-                <i class="bi bi-filter"></i> Filtrar
-            </button>
-            <a href="?export=1&q={{ query }}&medio={{ medio }}" class="btn btn-success btn-sm">
-                <i class="bi bi-file-earmark-excel"></i> Exportar XLSX
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4">
+        <div class="d-flex align-items-center mb-3 mb-md-0">
+            <div class="icon-wrapper bg-primary rounded-circle p-3 me-3">
+                <i class="bi bi-receipt text-white fs-4"></i>
+            </div>
+            <div>
+                <h2 class="fw-bold mb-1">Historial de Ventas</h2>
+                <p class="text-muted mb-0">Registro completo de todas las transacciones</p>
+            </div>
+        </div>
+        
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'registrar_ventas' %}" class="btn btn-success d-flex align-items-center">
+                <i class="bi bi-plus-circle me-2"></i>
+                Nueva Venta
             </a>
-        </form>
+        </div>
     </div>
 
-    <div class="table-responsive">
-        <table class="table align-middle table-hover table-modern text-center border rounded">
-            <thead class="bg-primary text-white">
-                <tr>
-                    <th>
-                        <a href="?order={% if order == 'fecha_hora' %}-fecha_hora{% else %}fecha_hora{% endif %}&q={{ query }}&medio={{ medio }}" class="text-white text-decoration-none">
-                            Fecha <i class="bi bi-arrow-down-up"></i>
-                        </a>
-                    </th>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>
-                        <a href="?order={% if order == 'precio_unitario_venta' %}-precio_unitario_venta{% else %}precio_unitario_venta{% endif %}&q={{ query }}&medio={{ medio }}" class="text-white text-decoration-none">
-                            Precio Unitario <i class="bi bi-arrow-down-up"></i>
-                        </a>
-                    </th>
-                    <th>Total</th>
-                    <th>Medio de Pago</th>
-                    <th>Evento</th>
-                </tr>
-            </thead>
-            <tbody class="bg-body text-body">
-                {% for venta in ventas %}
-                <tr>
-                    <td>{{ venta.fecha_hora|date:"d/m/Y H:i" }}</td>
-                    <td>{{ venta.producto.nombre }}</td>
-                    <td>{{ venta.cantidad }}</td>
-                    <td>${{ venta.precio_unitario_venta }}</td>
-                    <td>${{ venta.total }}</td>
-                    <td>
-                        {% if venta.medio_de_pago == "Efectivo" %}
-                            <span class="badge bg-success-subtle text-success">{{ venta.medio_de_pago }}</span>
-                        {% else %}
-                            <span class="badge bg-info-subtle text-info">{{ venta.medio_de_pago }}</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ venta.evento.nombre|default:"-" }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="text-muted py-3">
-                        <i class="bi bi-receipt-cutoff"></i> No hay ventas registradas.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label fw-semibold">Buscar Producto</label>
+                    <div class="input-group">
+                        <span class="input-group-text border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" name="q" class="form-control border-start-0" 
+                               placeholder="Nombre del producto..." value="{{ query }}">
+                    </div>
+                </div>
+                
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-semibold">Medio de Pago</label>
+                    <select name="medio" class="form-select">
+                        <option value="">Todos los medios</option>
+                        <option value="Efectivo" {% if medio == 'Efectivo' %}selected{% endif %}>💵 Efectivo</option>
+                        <option value="Mercado Pago" {% if medio == 'Mercado Pago' %}selected{% endif %}>🔵 Mercado Pago</option>
+                    </select>
+                </div>
+                
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-semibold">Ordenar por</label>
+                    <select name="order" class="form-select">
+                        <option value="-fecha_hora" {% if order == '-fecha_hora' %}selected{% endif %}>Fecha (Más reciente)</option>
+                        <option value="fecha_hora" {% if order == 'fecha_hora' %}selected{% endif %}>Fecha (Más antigua)</option>
+                        <option value="-precio_unitario_venta" {% if order == '-precio_unitario_venta' %}selected{% endif %}>Precio (Mayor a menor)</option>
+                        <option value="precio_unitario_venta" {% if order == 'precio_unitario_venta' %}selected{% endif %}>Precio (Menor a mayor)</option>
+                    </select>
+                </div>
+                
+                <div class="col-12 col-md-2">
+                    <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center" type="submit">
+                        <i class="bi bi-funnel me-2"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    {% if page_obj.has_other_pages %}
-    <nav class="mt-3">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link bg-body text-body border-secondary" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&medio={{ medio }}">&laquo;</a>
-            </li>
-            {% endif %}
-            {% for num in page_obj.paginator.page_range %}
-                {% if num == page_obj.number %}
-                    <li class="page-item active"><span class="page-link bg-primary border-0">{{ num }}</span></li>
-                {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
-                    <li class="page-item"><a class="page-link bg-body text-body border-secondary" href="?page={{ num }}&q={{ query }}&medio={{ medio }}">{{ num }}</a></li>
-                {% endif %}
-            {% endfor %}
-            {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link bg-body text-body border-secondary" href="?page={{ page_obj.next_page_number }}&q={{ query }}&medio={{ medio }}">&raquo;</a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-
-    <div class="mt-4">
-        <div class="row text-center">
-            <div class="col-md-4 mb-2">
-                <div class="card bg-body-secondary border-0">
-                    <div class="card-body">
-                        <h6>💰 Total Recaudado</h6>
-                        <h4 class="fw-bold text-success">${{ total_recaudado|floatformat:2 }}</h4>
+    <!-- Estadísticas Principales -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-primary rounded-circle mx-auto mb-3">
+                        <i class="bi bi-currency-dollar text-white"></i>
                     </div>
+                    <h3 class="fw-bold text-primary mb-1">${{ total_recaudado|floatformat:2 }}</h3>
+                    <p class="text-muted mb-0 small">Total Recaudado</p>
                 </div>
             </div>
-            <div class="col-md-4 mb-2">
-                <div class="card bg-body-secondary border-0">
-                    <div class="card-body">
-                        <h6>💵 Efectivo</h6>
-                        <h4 class="fw-bold text-primary">${{ total_efectivo|floatformat:2 }}</h4>
+        </div>
+        
+        <div class="col-6 col-md-3">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-success rounded-circle mx-auto mb-3">
+                        <i class="bi bi-cash text-white"></i>
                     </div>
+                    <h3 class="fw-bold text-success mb-1">${{ total_efectivo|floatformat:2 }}</h3>
+                    <p class="text-muted mb-0 small">En Efectivo</p>
                 </div>
             </div>
-            <div class="col-md-4 mb-2">
-                <div class="card bg-body-secondary border-0">
-                    <div class="card-body">
-                        <h6>📱 Mercado Pago</h6>
-                        <h4 class="fw-bold text-info">${{ total_mp|floatformat:2 }}</h4>
+        </div>
+        
+        <div class="col-6 col-md-3">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-info rounded-circle mx-auto mb-3">
+                        <i class="bi bi-phone text-white"></i>
                     </div>
+                    <h3 class="fw-bold text-info mb-1">${{ total_mp|floatformat:2 }}</h3>
+                    <p class="text-muted mb-0 small">Mercado Pago</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-6 col-md-3">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-warning rounded-circle mx-auto mb-3">
+                        <i class="bi bi-receipt text-white"></i>
+                    </div>
+                    <h3 class="fw-bold text-warning mb-1">{{ ventas.paginator.count }}</h3>
+                    <p class="text-muted mb-0 small">Total Ventas</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="mt-5">
-        <h5 class="fw-bold mb-3 text-body"><i class="bi bi-bar-chart"></i> Ventas por Evento</h5>
-        <canvas id="ventasChart" height="120"></canvas>
+    <div class="row g-4">
+        <!-- Gráficos -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-pie-chart-fill me-2"></i>
+                        Distribución por Medio de Pago
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="distribucionPagosChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-bar-chart-line me-2"></i>
+                        Ventas por Evento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="ventasEventoChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Tabla de Ventas -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-light py-3">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                <h5 class="mb-0 d-flex align-items-center">
+                    <i class="bi bi-list-ul me-2"></i>
+                    Detalle de Ventas
+                </h5>
+                <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                    <span class="text-muted small">Mostrando {{ ventas.start_index }}-{{ ventas.end_index }} de {{ ventas.paginator.count }}</span>
+                    <a href="?export=1&q={{ query }}&medio={{ medio }}&order={{ order }}" class="btn btn-success btn-sm d-flex align-items-center">
+                        <i class="bi bi-file-earmark-excel me-2"></i> Exportar
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Fecha y Hora</th>
+                            <th>Producto</th>
+                            <th class="text-center">Cantidad</th>
+                            <th class="text-end">Precio Unit.</th>
+                            <th class="text-end">Total</th>
+                            <th class="text-center">Medio Pago</th>
+                            <th class="text-center pe-4">Evento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for venta in ventas %}
+                        <tr class="venta-row">
+                            <td class="ps-4">
+                                <div class="fw-medium">{{ venta.fecha_hora|date:"d/m/Y" }}</div>
+                                <div class="text-muted small">{{ venta.fecha_hora|date:"H:i" }}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-box me-2 text-muted"></i>
+                                    <span>{{ venta.producto.nombre }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary rounded-pill">{{ venta.cantidad }}</span>
+                            </td>
+                            <td class="text-end fw-semibold">${{ venta.precio_unitario_venta }}</td>
+                            <td class="text-end">
+                                <strong class="text-success">${{ venta.total }}</strong>
+                            </td>
+                            <td class="text-center">
+                                {% if venta.medio_de_pago == "Efectivo" %}
+                                <span class="badge bg-success d-flex align-items-center justify-content-center gap-1">
+                                    <i class="bi bi-cash"></i> Efectivo
+                                </span>
+                                {% elif venta.medio_de_pago == "Mercado Pago" %}
+                                <span class="badge bg-info d-flex align-items-center justify-content-center gap-1">
+                                    <i class="bi bi-phone"></i> MPago
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary d-flex align-items-center justify-content-center gap-1">
+                                    <i class="bi bi-bank"></i> {{ venta.medio_de_pago }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center pe-4">
+                                {% if venta.evento %}
+                                <span class="badge bg-light text-dark">
+                                    {{ venta.evento.nombre }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="bi bi-receipt display-4 text-muted mb-3"></i>
+                                <h5 class="text-muted">No hay ventas registradas</h5>
+                                <p class="text-muted mb-0">No se encontraron ventas con los filtros aplicados</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if ventas.has_other_pages %}
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <div class="text-muted small">
+            Mostrando {{ ventas.start_index }}-{{ ventas.end_index }} de {{ ventas.paginator.count }} ventas
+        </div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                {% if ventas.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ventas.previous_page_number }}&q={{ query }}&medio={{ medio }}&order={{ order }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in ventas.paginator.page_range %}
+                    {% if num == ventas.number %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > ventas.number|add:-3 and num < ventas.number|add:3 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}&q={{ query }}&medio={{ medio }}&order={{ order }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if ventas.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ventas.next_page_number }}&q={{ query }}&medio={{ medio }}&order={{ order }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-const textColor = isDark ? '#fff' : '#000';
-const gridColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)';
 
-new Chart(document.getElementById('ventasChart'), {
-    type: 'bar',
-    data: {
-        labels: {{ eventos_labels|safe }},
-        datasets: [{
-            label: 'Total recaudado ($)',
-            data: {{ eventos_values|safe }},
-            backgroundColor: isDark ? 'rgba(0, 123, 255, 0.6)' : 'rgba(0, 86, 179, 0.6)',
-            borderColor: isDark ? '#fff' : '#000',
-            borderWidth: 1,
-            borderRadius: 6
-        }]
-    },
-    options: {
-        plugins: { legend: { display: false }},
-        scales: {
-            x: { ticks: { color: textColor }, grid: { color: gridColor }},
-            y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: gridColor }}
-        }
+<style>
+.stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 12px;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-wrapper {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.venta-row:hover {
+    background: rgba(var(--primario-rgb), 0.03);
+    transition: all 0.2s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stat-card .card-body {
+        padding: 1rem;
     }
+    
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .stat-card {
+    background: var(--card-bg);
+}
+
+[data-bs-theme="dark"] .card-header.bg-light {
+    background: var(--border-color) !important;
+    color: var(--text);
+}
+
+[data-bs-theme="dark"] .table-light {
+    background: var(--border-color) !important;
+    color: var(--text);
+}
+</style>
+
+<script>
+
+// Por algun motivo Mercado pago no se grafica correctamente. Desconozco el problema.
+document.addEventListener('DOMContentLoaded', function() {
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const textColor = isDark ? '#e6eef8' : '#222';
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    
+    const paymentColors = isDark ? 
+        ['rgba(40, 167, 69, 0.8)', 'rgba(13, 110, 253, 0.8)'] :
+        ['rgba(40, 99, 167, 0.8)', 'rgba(13, 110, 253, 0.8)'];
+
+    const distribucionCtx = document.getElementById('distribucionPagosChart').getContext('2d');
+    
+    new Chart(distribucionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Efectivo', 'Mercado Pago'],
+            datasets: [{
+                data: [
+                    {{ total_efectivo|default:0 }},
+                    {{ total_mp|default:0 }}
+                ],
+                backgroundColor: paymentColors,
+                borderColor: isDark ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                borderWidth: 2,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: textColor,
+                        padding: 15,
+                        usePointStyle: true,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: isDark ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.95)',
+                    titleColor: textColor,
+                    bodyColor: textColor,
+                    borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return ` $${value.toFixed(2)} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const ventasCtx = document.getElementById('ventasEventoChart').getContext('2d');
+    new Chart(ventasCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ eventos_labels|safe }},
+            datasets: [{
+                label: 'Total Recaudado ($)',
+                data: {{ eventos_values|safe }},
+                backgroundColor: isDark ? 'rgba(13, 110, 253, 0.8)' : 'rgba(13, 110, 253, 0.8)',
+                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                borderWidth: 1,
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: isDark ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.95)',
+                    titleColor: textColor,
+                    bodyColor: textColor,
+                    borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return ` $${context.parsed.y.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: gridColor,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: textColor,
+                        maxRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: gridColor,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: textColor,
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Inicializar tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
 });
 </script>
 {% endblock %}
